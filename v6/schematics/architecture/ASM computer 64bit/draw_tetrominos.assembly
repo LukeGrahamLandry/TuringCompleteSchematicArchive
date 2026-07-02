@@ -1,0 +1,48 @@
+const r_i 0 # reg for index
+const r_tmp 1 # reg for tmp
+const r_param 2 # reg for param
+
+label _draw_tetrominos
+# initialisation
+# r_i
+put r_i 0
+# reghdd
+mul_d r_param 16
+mov r_tmp reghddpos
+neg r_tmp _
+mov reghdd r_tmp
+mov reghdd r_param
+mov reghdd 0
+
+# regram
+put regram 0
+# r_tmp
+put r_tmp 0
+
+label _draw_tetrominos_loop
+
+mov ram hdd
+put reghdd 1
+put reghdd 0
+inc regram _
+
+mov ram hdd
+put reghdd 1
+put reghdd 0
+inc regram _
+
+mov ram hdd
+put reghdd 1
+put reghdd 0
+inc regram _
+
+mov ram hdd
+put reghdd 1
+put reghdd 0
+add_d regram 77
+
+inc r_i _
+cmp_d r_i 4
+je _end_draw_tetrominos_loop _
+jmp _draw_tetrominos_loop _
+label _end_draw_tetrominos_loop

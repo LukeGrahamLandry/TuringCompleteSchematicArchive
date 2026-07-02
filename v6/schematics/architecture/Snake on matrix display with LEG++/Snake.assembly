@@ -1,0 +1,834 @@
+const seed 42
+const speed 100
+
+#couleurs
+const Rbckg 24 #background
+const Gbckg 24
+const Bbckg 24
+
+const Rmargin 0 #marge
+const Gmargin 0
+const Bmargin 0
+
+#coordonnées cadre de jeu
+const game_w 48
+const game_h 48
+
+#coordonnées pomme 
+const pommex1 10
+const pommey1 8
+const pommex2 53
+const pommey2 39
+
+const keyup 16
+const keydown 18
+const keyleft 15
+const keyright 17
+
+const scr_w 64
+const scr_h 48
+
+const slX 0
+const slY 1
+
+const sldir 2
+const slderdir 6
+const ddroite 0
+const dbas 1
+const dgauche 2
+const dhaut 3
+
+const longueur reg7
+const slpommeX 4
+const slpommeY 5
+
+const slreadfifo 10 
+const slwritefifo 11
+const fifoinit 12
+
+const slseed 3
+
+#digits score
+const slscore001 9
+const slscore010 8
+const slscore100 7
+
+#WAIT SCREEN
+label wait_screen
+#counter for blinking = reg2
+supB keyboard 0 start_game
+callif|eqB reg2 0 blink1
+callif|eqB reg2 10 blink2
+#increase blinking counter
+#every 750 cycles
+callif|supB timer 75 incrcount
+callif|supeqB reg2 20 resetcount
+goto _ _ wait_screen
+
+#increase blinking counter
+label incrcount
+incr reg2 1 reg2
+set timer 0 timer
+ret _ _ _
+
+#reset blinking counter
+label resetcount
+set 0 _ reg2
+ret _ _ _
+
+#blink 1 set black screen
+label blink1
+set 0 _ reg0
+color 0 0 0
+callif|eqB reg3 0 fillscreen
+set 1 _ reg3
+ret _ _ _
+#blink 2 set press key text
+label blink2
+callif|eqB reg3 1 presskeytxt
+set 0 _ reg3
+ret _ _ _
+
+#PRESS KEY
+label presskeytxt
+color 255 255 255
+
+set 8 _ reg0
+set 12 _ reg1
+call _ _ charP
+set 16 _ reg0
+call _ _ charR
+set 24 _ reg0
+call _ _ charE
+set 32 _ reg0 
+call _ _ charS
+set 40 _ reg0
+call _ _ charS
+set 16 _ reg0 
+set 24 _ reg1
+call _ _ charK
+set 24 _ reg0
+call _ _ charE
+set 32 _ reg0
+call _ _ charY
+
+releaseALL _ _ _
+ret _ _ _
+
+label fillscreen
+drawlineALL|A 255 reg0 _
+incr reg0 1 reg0
+infB reg0 8 fillscreen
+releaseALL _ _ _
+ret _ _ _
+
+
+
+#INITIALISATION GAME
+label start_game
+#Reset screen
+set 0 _ reg0
+set 0 _ timer
+color Rbckg Gbckg Bbckg
+call _ _ fillscreen
+
+#Reset memory
+set 0 _ reg7
+set 0 _ slot
+label reset_ram
+set 0 _ ram
+incr slot 1 slot
+infB slot 10 reset_ram
+
+#Screen right side
+set game_w _ reg0
+set 0 _ reg1
+set 0 _ reg2
+color Rmargin Gmargin Bmargin
+label draw_rightside
+tile reg0 reg1 _
+drawlineA 255 reg2 _
+incr reg2 1 reg2
+release _ _ _
+infB reg2 6 draw_rightside
+set 0 _ reg2
+incr reg0 8 reg0
+infB reg0 scr_w draw_rightside
+set game_w _ reg0
+set 0 _ reg2
+incr reg1 6 reg1
+infB reg1 scr_h draw_rightside
+
+call _ _ draw_tens
+
+#Snake XY
+set slX _ slot
+set 24 _ ram
+set slY _ slot
+set 24 _ ram
+
+#FIFO
+set slreadfifo _ slot
+set fifoinit _ ram
+set slwritefifo _ slot
+set fifoinit _ ram
+#snake
+set slX _ slot
+copy ram in reg0
+set slY _ slot
+copy ram in reg1
+color 255 255 255
+call _ _ draw_square #draw snake
+call _ _ enqueue
+#seed pomme
+set slseed _ slot
+copy timer _ ram
+#pomme
+call _ _ manger_pomme
+
+label repeat_exec
+callif|eqB keyboard keyup dir_up
+callif|eqB keyboard keydown dir_down 
+callif|eqB keyboard keyleft dir_left
+callif|eqB keyboard keyright dir_right
+
+callif|supeq|littB timer speed move
+
+releaseALL _ _ _
+
+goto _ _ repeat_exec
+
+label dir_up
+set 0 _ keyboard
+set slderdir _ slot
+retif|eqB ram dbas _
+set sldir _ slot
+set dhaut _ ram
+ret _ _ _
+
+label dir_down
+set 0 _ keyboard
+set slderdir _ slot
+retif|eqB ram dhaut _
+set sldir _ slot
+set dbas _ ram
+ret _ _ _
+
+label dir_left
+set 0 _ keyboard
+set slderdir _ slot
+retif|eqB ram ddroite _
+set sldir _ slot
+set dgauche _ ram
+ret _ _ _
+
+label dir_right
+set 0 _ keyboard
+set slderdir _ slot
+retif|eqB ram dgauche _
+set sldir _ slot
+set ddroite _ ram
+ret _ _ _
+
+label move
+set 0 _ timer
+set sldir _ slot
+copy ram in reg0
+callif|eqB ram dhaut decrY
+set sldir _ slot
+callif|eqB ram dbas incrY
+set sldir _ slot
+callif|eqB ram dgauche decrX
+set sldir _ slot
+callif|eqB ram ddroite incrX
+set slderdir _ slot
+copy reg0 in ram
+set slX _ slot
+copy ram in reg0
+set slY _ slot
+copy ram in reg1
+call _ _ scanXY
+eqB reg2 1 gameover
+color 255 255 255
+call _ _ draw_square
+call _ _ enqueue
+call _ _ verifier_pomme
+eqB reg2 0 manger_pomme
+
+call _ _ dequeue
+color Rbckg Gbckg Bbckg
+call _ _ draw_square
+ret _ _ _
+
+label decrY
+set slY _ slot
+eqB ram 0 gameover
+decr ram 2 ram
+ret _ _ _
+
+label incrY
+set slY _ slot
+supeqB ram game_h-2 gameover
+incr ram 2 ram
+ret _ _ _
+
+label decrX
+set slX _ slot
+eqB ram 0 gameover
+decr ram 2 ram
+ret _ _ _
+
+label incrX
+set slX _ slot
+supeqB ram game_w-2 gameover
+incr ram 2 ram
+ret _ _ _
+
+label draw_square
+#(reg0 x, reg1 y)
+incr reg0 1 reg2
+incr reg1 1 reg3
+draw reg0 reg1 _
+draw reg2 reg1 _
+draw reg0 reg3 _
+draw reg2 reg3 _
+ret _ _ _
+
+label verifier_pomme
+#(reg0 x, reg1 y)
+set slpommeX _ slot
+copy ram in reg2
+set slpommeY _ slot
+copy ram in reg3
+sub reg0 reg2 reg2
+sub reg1 reg3 reg3
+or reg2 reg3 reg2
+ret _ _ _ #res in reg2
+
+label enqueue
+#(reg0 x, reg1 y)
+set slwritefifo _ slot
+copy ram in slot
+copy reg0 in ram
+incr slot 1 slot
+copy reg1 in ram
+set slwritefifo _ slot
+incr ram 2 ram
+infB ram fifoinit loopfifo
+ret _ _ _
+
+label dequeue
+set slreadfifo _ slot
+copy ram in slot
+copy ram in reg0
+incr slot 1 slot
+copy ram in reg1
+set slreadfifo _ slot
+incr ram 2 ram
+infB ram fifoinit loopfifo
+ret _ _ _ #res in reg 0, reg1
+
+label scanXY
+#(reg0 x, reg1 y)
+set 1 _ reg2 #res
+set 0 _ reg3 #loopcount
+set slreadfifo _ slot
+copy ram in reg4 #slotscan
+label loopscanXY
+copy reg4 in slot
+copy ram in reg5 #xcompare
+incr reg4 1 reg4
+copy reg4 in slot
+copy ram in reg6 #ycompare
+sub reg0 reg5 reg5
+sub reg1 reg6 reg6
+or reg5 reg6 reg5
+retif|eqB reg5 0 _ #return true
+incr reg4 1 reg4
+callif|infB reg4 fifoinit loopfifoscan
+incr reg3 1 reg3
+inf reg3 longueur loopscanXY
+#fin du scan 
+set 0 _ reg2 #return false
+ret _ _ _ #res in reg2
+
+
+label loopfifo
+set fifoinit _ ram
+ret _ _ _
+
+label loopfifoscan
+#(reg4 n)
+set fifoinit _ reg4
+ret _ _ _ #res in reg4
+
+label manger_pomme
+call _ _ random
+add reg0 reg0 reg0 #x2 (x y pairs)
+callif|supeqB reg0 game_h moduloY
+copy reg0 in reg3 
+call _ _ random
+add reg0 reg0 reg0 #x2
+callif|supeqB reg0 game_w moduloX
+copy reg3 in reg1
+call _ _ scanXY
+eqB reg2 1 manger_pomme
+#dessiner pomme
+color 255 0 0
+call _ _ draw_square
+#maj coordonnées pomme
+set slpommeX _ slot
+copy reg0 in ram
+set slpommeY _ slot
+copy reg1 in ram
+incr longueur 1 longueur
+set slscore001 _ slot
+eqB ram 9 carry_tens
+incr ram 1 ram
+call _ _ draw_ones
+ret _ _ _
+label carry_tens
+set 0 _ ram
+set slscore010 _ slot
+eqB ram 9 carry_hundreds
+incr ram 1 ram
+call _ _ draw_tens
+set slscore001 _ slot
+call _ _ draw_ones
+ret _ _ _
+label carry_hundreds
+set 0 _ ram
+set slscore100 _ slot
+incr ram 1 ram
+call _ _ draw_hundreds
+set slscore010 _ slot
+call _ _ draw_tens
+set slscore001 _ slot
+call _ _ draw_ones
+ret _ _ _
+
+label moduloX 
+#(reg0 n)
+subB reg0 game_w reg0
+supeqB reg0 game_w moduloX
+ret _ _ _ #res in reg0
+
+label moduloY 
+#(reg0 n)
+subB reg0 game_h reg0
+supeqB reg0 game_h moduloY
+ret _ _ _ #res in reg0
+
+label random
+set slseed _ slot
+copy ram in reg0
+shl reg0 3 reg1
+xor reg0 reg1 reg0
+shr reg0 5 reg1
+xor reg0 reg1 reg0
+shl reg0 4 reg1
+xor reg0 reg1 reg0
+copy reg0 in ram
+ret _ _ _ #res in reg0
+
+label draw_ones
+#(ram digit)
+color Rmargin Gmargin Bmargin
+tileAB 56 18 _
+drawlineAB 255 0 _
+drawlineAB 255 1 _
+drawlineAB 255 2 _
+drawlineAB 255 3 _
+drawlineAB 255 4 _
+drawlineAB 255 5 _
+color 255 255 255
+eqB ram 0 char0_lft
+eqB ram 1 char1_lft
+eqB ram 2 char2_lft
+eqB ram 3 char3_lft
+eqB ram 4 char4_lft
+eqB ram 5 char5_lft
+eqB ram 6 char6_lft
+eqB ram 7 char7_lft
+eqB ram 8 char8_lft
+eqB ram 9 char9_lft
+
+label draw_tens
+#(ram digit)
+set slscore010 _ slot
+color Rmargin Gmargin Bmargin
+tileAB 48 18 _
+drawlineAB 15 0 _
+drawlineAB 15 1 _
+drawlineAB 15 2 _
+drawlineAB 15 3 _
+drawlineAB 15 4 _
+drawlineAB 15 5 _
+color 255 255 255
+eqB ram 0 char0_rght
+eqB ram 1 char1_rght
+eqB ram 2 char2_rght
+eqB ram 3 char3_rght
+eqB ram 4 char4_rght
+eqB ram 5 char5_rght
+eqB ram 6 char6_rght
+eqB ram 7 char7_rght
+eqB ram 8 char8_rght
+eqB ram 9 char9_rght
+
+label draw_hundreds
+#(ram digit)
+color 255 255 255
+tileAB 48 18 _
+drawlineAB 32 0 _
+drawlineAB 96 1 _
+drawlineAB 32 2 _
+drawlineAB 32 3 _
+drawlineAB 32 4 _
+drawlineAB 32 5 _
+ret _ _ _
+
+
+label gameover
+set 0 _ keyboard
+color 128 128 128
+tileAB 8 6 _
+call _ _ charG
+tileAB 16 6 _
+call _ _ charA
+tileAB 24 6 _
+call _ _ charM
+tileAB 32 6 _
+call _ _ charEshft
+tileAB 8 18 _
+call _ _ charO
+tileAB 16 18 _
+call _ _ charV
+tileAB 24 18 _
+call _ _ charEshft
+tileAB 32 18 _
+call _ _ charRshft
+releaseALL _ _ _
+
+label wait_restart
+supB keyboard 0 restart
+goto _ _ wait_restart
+
+label restart
+#restart if key not arrow
+infB keyboard keyleft start_game
+supB keyboard keydown start_game
+goto wait_restart
+
+#CHARS
+label charG
+drawlineAB 48 0 _
+drawlineAB 64 1 _
+drawlineAB 64 2 _
+drawlineAB 88 3 _
+drawlineAB 72 4 _
+drawlineAB 48 5 _
+ret _ _ _
+
+label charA
+drawlineAB 48 0 _
+drawlineAB 72 1 _
+drawlineAB 72 2 _
+drawlineAB 120 3 _
+drawlineAB 72 4 _
+drawlineAB 72 5 _
+ret _ _ _
+
+label charM
+drawlineAB 136 0 _
+drawlineAB 216 1 _
+drawlineAB 168 2 _
+drawlineAB 168 3 _
+drawlineAB 136 4 _
+drawlineAB 136 5 _
+ret _ _ _
+
+label charO
+drawlineAB 112 0 _
+drawlineAB 136 1 _
+drawlineAB 136 2 _
+drawlineAB 136 3 _
+drawlineAB 136 4 _
+drawlineAB 112 5 _
+ret _ _ _
+
+label charV
+drawlineAB 136 0 _
+drawlineAB 136 1 _
+drawlineAB 136 2 _
+drawlineAB 136 3 _
+drawlineAB 80 4 _
+drawlineAB 32 5 _
+ret _ _ _
+
+label charEshft
+drawlineAB 120 0 _
+drawlineAB 64 1 _
+drawlineAB 112 2 _
+drawlineAB 64 3 _
+drawlineAB 64 4 _
+drawlineAB 120 5 _
+ret _ _ _
+
+label charRshft
+drawlineAB 112 0 _
+drawlineAB 72 1 _
+drawlineAB 72 2 _
+drawlineAB 112 3 _
+drawlineAB 72 4 _
+drawlineAB 72 5 _
+ret _ _ _
+
+label charE
+#(reg0 x, reg1 y)
+tile reg0 reg1 _
+drawlineAB 15 0 _
+drawlineAB 8 1 _
+drawlineAB 14 2 _
+drawlineAB 8 3 _
+drawlineAB 8 4 _
+drawlineAB 15 5 _
+ret _ _ _
+
+label charK
+#(reg0 x, reg1 y)
+tile reg0 reg1 _
+drawlineAB 9 0 _
+drawlineAB 10 1 _
+drawlineAB 12 2 _
+drawlineAB 10 3 _
+drawlineAB 9 4 _
+drawlineAB 9 5 _
+ret _ _ _
+
+label charP
+#(reg0 x, reg1 y)
+tile reg0 reg1 _
+drawlineAB 14 0 _
+drawlineAB 9 1 _
+drawlineAB 9 2 _
+drawlineAB 14 3 _
+drawlineAB 8 4 _
+drawlineAB 8 5 _
+ret _ _ _
+
+label charR
+#(reg0 x, reg1 y)
+tile reg0 reg1 _
+drawlineAB 14 0 _
+drawlineAB 9 1 _
+drawlineAB 9 2 _
+drawlineAB 14 3 _
+drawlineAB 9 4 _
+drawlineAB 9 5 _
+ret _ _ _
+
+label charS
+#(reg0 x, reg1 y)
+tile reg0 reg1 _
+drawlineAB 7 0 _
+drawlineAB 8 1 _
+drawlineAB 14 2 _
+drawlineAB 1 3 _
+drawlineAB 1 4 _
+drawlineAB 14 5 _
+ret _ _ _
+
+label charY
+#(reg0 x, reg1 y)
+tile reg0 reg1 _
+drawlineAB 9 0 _
+drawlineAB 9 1 _
+drawlineAB 6 2 _
+drawlineAB 2 3 _
+drawlineAB 4 4 _
+drawlineAB 4 5 _
+ret _ _ _
+
+label char0_rght
+drawlineAB 6 0 _
+drawlineAB 9 1 _
+drawlineAB 9 2 _
+drawlineAB 9 3 _
+drawlineAB 9 4 _
+drawlineAB 6 5 _
+ret _ _ _
+
+label char0_lft
+drawlineAB 48 0 _
+drawlineAB 72 1 _
+drawlineAB 72 2 _
+drawlineAB 72 3 _
+drawlineAB 72 4 _
+drawlineAB 48 5 _
+ret _ _ _
+
+label char1_rght
+drawlineAB 2 0 _
+drawlineAB 6 1 _
+drawlineAB 2 2 _
+drawlineAB 2 3 _
+drawlineAB 2 4 _
+drawlineAB 2 5 _
+ret _ _ _
+
+label char1_lft
+drawlineAB 16 0 _
+drawlineAB 48 1 _
+drawlineAB 16 2 _
+drawlineAB 16 3 _
+drawlineAB 16 4 _
+drawlineAB 16 5 _
+ret _ _ _
+
+label char2_rght
+drawlineAB 6 0 _
+drawlineAB 9 1 _
+drawlineAB 1 2 _
+drawlineAB 7 3 _
+drawlineAB 8 4 _
+drawlineAB 15 5 _
+ret _ _ _
+
+label char2_lft
+drawlineAB 48 0 _
+drawlineAB 72 1 _
+drawlineAB 8 2 _
+drawlineAB 56 3 _
+drawlineAB 64 4 _
+drawlineAB 120 5 _
+ret _ _ _
+
+label char3_rght
+drawlineAB 14 0 _
+drawlineAB 1 1 _
+drawlineAB 7 2 _
+drawlineAB 1 3 _
+drawlineAB 1 4 _
+drawlineAB 14 5 _
+ret _ _ _
+
+label char3_lft
+drawlineAB 112 0 _
+drawlineAB 8 1 _
+drawlineAB 56 2 _
+drawlineAB 8 3 _
+drawlineAB 8 4 _
+drawlineAB 112 5 _
+ret _ _ _
+
+label char4_rght
+drawlineAB 2 0 _
+drawlineAB 6 1 _
+drawlineAB 10 2 _
+drawlineAB 15 3 _
+drawlineAB 2 4 _
+drawlineAB 2 5 _
+ret _ _ _
+
+label char4_lft
+drawlineAB 16 0 _
+drawlineAB 48 1 _
+drawlineAB 80 2 _
+drawlineAB 120 3 _
+drawlineAB 16 4 _
+drawlineAB 16 5 _
+ret _ _ _
+
+label char5_rght
+drawlineAB 15 0 _
+drawlineAB 8 1 _
+drawlineAB 14 2 _
+drawlineAB 1 3 _
+drawlineAB 1 4 _
+drawlineAB 14 5 _
+ret _ _ _
+
+label char5_lft
+drawlineAB 120 0 _
+drawlineAB 64 1 _
+drawlineAB 112 2 _
+drawlineAB 8 3 _
+drawlineAB 8 4 _
+drawlineAB 112 5 _
+ret _ _ _
+
+label char6_rght
+drawlineAB 6 0 _
+drawlineAB 8 1 _
+drawlineAB 14 2 _
+drawlineAB 9 3 _
+drawlineAB 9 4 _
+drawlineAB 6 5 _
+ret _ _ _
+
+label char6_lft
+drawlineAB 48 0 _
+drawlineAB 64 1 _
+drawlineAB 112 2 _
+drawlineAB 72 3 _
+drawlineAB 72 4 _
+drawlineAB 48 5 _
+ret _ _ _
+
+label char7_rght
+drawlineAB 15 0 _
+drawlineAB 1 1 _
+drawlineAB 2 2 _
+drawlineAB 4 3 _
+drawlineAB 4 4 _
+drawlineAB 4 5 _
+ret _ _ _
+
+label char7_lft
+drawlineAB 120 0 _
+drawlineAB 8 1 _
+drawlineAB 16 2 _
+drawlineAB 32 3 _
+drawlineAB 32 4 _
+drawlineAB 32 5 _
+ret _ _ _
+
+label char8_rght
+drawlineAB 6 0 _
+drawlineAB 9 1 _
+drawlineAB 6 2 _
+drawlineAB 9 3 _
+drawlineAB 8 4 _
+drawlineAB 6 5 _
+ret _ _ _
+
+label char8_lft
+drawlineAB 48 0 _
+drawlineAB 72 1 _
+drawlineAB 48 2 _
+drawlineAB 72 3 _
+drawlineAB 72 4 _
+drawlineAB 48 5 _
+ret _ _ _
+
+label char9_rght
+drawlineAB 6 0 _
+drawlineAB 9 1 _
+drawlineAB 9 2 _
+drawlineAB 7 3 _
+drawlineAB 1 4 _
+drawlineAB 6 5 _
+ret _ _ _
+
+label char9_lft
+drawlineAB 48 0 _
+drawlineAB 72 1 _
+drawlineAB 72 2 _
+drawlineAB 56 3 _
+drawlineAB 8 4 _
+drawlineAB 48 5 _
+ret _ _ _
+
+
+

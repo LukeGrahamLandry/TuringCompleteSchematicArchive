@@ -1,0 +1,9 @@
+Godot Engine v3.4.2.stable.custom_build - https://godotengine.org
+OpenGL ES 3.0 Renderer: NVIDIA GeForce RTX 2070 SUPER/PCIe/SSE2
+OpenGL ES Batching: ON
+ 
+WARNING: No small icon found, reusing 150x150 @32768 icon!
+   at: OS_Windows::set_native_icon (platform\windows\os_windows.cpp:2968) - No small icon found, reusing 150x150 @32768 icon!
+Turing Complete 0.673 Beta on Windows
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+   at: ObjectDB::cleanup (core\object.cpp:2064) - ObjectDB instances leaked at exit (run with --verbose for details).

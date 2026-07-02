@@ -1,0 +1,475 @@
+#reg addresses
+const mpt = 0
+const last_tick = 1
+const head_address = 2
+const length = 3
+#ram addresses
+const input = 0
+const last_note = 1
+const food_pos = 2
+const grow = 3
+const score = 4
+#sprite IDs
+const background = 0
+const continue = 1
+const score1 = 2
+const score2 = 3
+const score3 = 4
+const score4 = 5
+const score5 = 6
+const score6 = 7
+const score7 = 8
+const food_id = 9
+const head_id = 10
+#other const
+const sprite_size = 1310740
+const continue_size = 2621840
+const digit_size = 2621466
+const offset_square = 0
+const offset_circle = 2621440
+const offset_start = 41943100
+const offset_bg = 83886140
+const offset_game_over = 60
+const offset_continue = 5242880
+const offset_0 = 32768000
+const offset_1 = 34340864
+const offset_2 = 35913728
+const offset_3 = 37486592
+const offset_4 = 39059456
+const offset_5 = 40632320
+const offset_6 = 42205184
+const offset_7 = 43778048
+const offset_8 = 45350912
+const offset_9 = 46923776
+const continue_pos = 26214530
+const start_mpt = 300000
+const start_x = 320
+const start_y = 240
+const start_head = 9
+const start_length = 5
+const neg_value_x = 4294967276
+const neg_value_y = 20
+const screen_x_edge = 620
+const screen_y_edge = 460
+const upper_bound = 40
+const note = 72
+const note2 = 73
+const note3 = 64
+const note4 = 69
+const note5 = 100
+const note6 = 96
+const food_points = 250
+
+label start
+load_ii background offset_start screen_size
+set_pos_ii continue continue_pos _
+label wait_for_start
+equal_i keyboard enter setup
+sub time reg0 reg4
+less_i reg4 500000 wait_for_start
+copy time _ reg0
+not_equal_i reg1 0 continue_off
+load_ii continue offset_continue continue_size
+copy_i 1 _ reg1
+jump wait_for_start _ counter
+label continue_off
+load_ii continue _ _
+copy_i 0 _ reg1
+jump wait_for_reset _ counter
+
+label setup
+load_ii background offset_bg screen_size
+load_ii continue _ _
+set_pos_ii score1 614 _
+load_ii score1 offset_0 digit_size
+set_pos_ii score2 594 _
+load_ii score2 _ _
+set_pos_ii score3 574 _
+load_ii score3 _ _
+set_pos_ii score4 554 _
+load_ii score4 _ _
+set_pos_ii score5 534 _
+load_ii score5 _ _
+set_pos_ii score6 514 _
+load_ii score6 _ _
+set_pos_ii score7 494 _
+load_ii score7 _ _
+copy_i start_mpt _ mpt
+copy_i start_head _ head_address
+copy_i start_length _ length
+copy_i input _ reg5
+copy_i up _ ram
+copy_i last_note _ reg5
+copy_i 0 _ ram
+copy_i grow _ reg5
+copy_i 0 _ ram
+copy_i score _ reg5
+copy_i 0 _ ram
+copy head_address _ reg5
+copy mpt _ stack
+copy last_tick _ stack
+copy_i start_x _ reg0
+copy_i start_y _ reg1
+call _ _ create_pos
+label create_body
+sub_i reg5 1 reg5
+sub head_address reg5 reg4
+equal reg4 length load_sprites
+add_i reg1 20 reg1
+call _ _ create_pos
+jump create_body _ counter
+label load_sprites
+copy head_address _ reg5
+copy_i head_id _ reg1
+label load_snake
+sub head_address reg5 reg4
+equal reg4 length snake_loaded
+set_pos reg1 ram _
+load_ai reg1 offset_square sprite_size
+sub_i reg5 1 reg5
+add_i reg1 1 reg1
+jump load_snake _ counter 
+label snake_loaded
+call _ _ spawn_food
+load_ii food_id offset_circle sprite_size
+copy stack _ last_tick
+copy stack _ mpt
+
+#clock
+label check_time
+sub time last_tick reg4
+less reg4 mpt check_time
+
+#enter main loop
+copy time _ last_tick
+copy mpt _ stack
+copy last_tick _ stack
+
+#play notes
+copy_i last_note _ reg5
+equal_i ram 0 play_note
+equal_i ram 1 dont_play
+equal_i ram 2 dont_play2
+equal_i ram 3 play_note2
+equal_i ram 4 dont_play3
+copy_i 0 _ ram
+jump update _ counter
+label play_note
+play_ii note _ _
+copy_i 1 _ ram
+jump update _ counter
+label dont_play
+copy_i 2 _ ram
+jump update _ counter
+label dont_play2
+copy_i 3 _ ram
+jump update _ counter
+label play_note2
+play_ii note2 _ _
+copy_i 4 _ ram
+jump update _ counter
+label dont_play3
+copy_i 5 _ ram
+
+label update
+copy head_address _ reg5
+call _ _ getxy
+label get_input
+copy keyboard _ reg4
+greater_eq_i reg4 256 get_input
+copy_i input _ reg5
+equal_i reg4 0 skip
+copy reg4 _ ram
+
+#update head x and y
+label skip
+not_equal_i ram up skip2
+sub_i reg1 20 reg1
+jump check_bounds _ counter
+label skip2
+not_equal_i ram right skip3
+add_i reg0 20 reg0
+jump check_bounds _ counter
+label skip3
+not_equal_i ram down skip4
+add_i reg1 20 reg1
+jump check_bounds _ counter
+label skip4
+sub_i reg0 20 reg0
+label check_bounds
+not_equal_i reg0 screen_w skip5
+copy_i 0 _ reg0
+label skip5
+not_equal_i reg0 neg_value_x skip6
+copy_i screen_x_edge _ reg0
+label skip6
+not_equal_i reg1 screen_h skip7
+copy_i upper_bound _ reg1
+label skip7
+not_equal_i reg1 neg_value_y skip8
+copy_i screen_y_edge _ reg1
+label skip8
+add_i head_address 1 head_address
+
+#check ram overflow
+less_i head_address ram_size skip9
+copy_i 0 _ reg4
+copy head_address _ reg5
+label copy_snake
+sub_i reg5 1 reg5
+copy ram _ stack
+add_i reg4 1 reg4
+less_equal reg4 length copy_snake
+copy_i 0 _ reg4
+copy_i 4 _ reg5
+label paste_snake
+add_i reg5 1 reg5
+copy stack _ ram
+add_i reg4 1 reg4
+less_equal reg4 length paste_snake
+add_i reg5 1 reg5
+copy reg5 _ head_address
+label skip9
+
+#update head pos
+copy head_address _ reg5
+call _ _ create_pos
+
+#check grow
+copy_i grow _ reg5
+not_equal_i ram 1 check_collisions
+copy_i 0 _ ram
+add_i length 1 length
+add_i length head_id reg0
+sub_i reg0 1 reg0
+copy head_address _ reg5
+set_pos reg0 ram _
+load_ai reg0 offset_square sprite_size
+#speed up as snake gets longer
+copy_i 0 _ reg4
+not_equal_i length 10 check_len
+copy_i 200000 _ reg4
+jump set_mpt _ counter
+label check_len
+not_equal_i length 15 check_len2
+copy_i 150000 _ reg4
+jump set_mpt _ counter
+label check_len2
+not_equal_i length 25 check_len3
+copy_i 100000 _ reg4
+jump set_mpt _ counter
+label check_len3
+not_equal_i length 50 check_len4
+copy_i 70000 _ reg4
+jump set_mpt _ counter
+label check_len4
+not_equal_i length 75 check_len5
+copy_i 50000 _ reg4
+jump set_mpt _ counter
+label check_len5
+not_equal_i length 100 set_mpt
+copy_i 40000 _ reg4
+label set_mpt
+equal_i reg4 0 check_collisions
+copy stack _ last_tick
+copy stack _ mpt
+copy reg4 _ mpt
+copy mpt _ stack
+copy last_tick _ stack
+
+label check_collisions
+#check food collision
+copy head_address _ reg5
+copy ram _ reg0
+copy_i food_pos _ reg5
+not_equal reg0 ram check_body_collision
+play_ii note3 _ _
+play_ii note4 _ _
+call _ _ spawn_food
+copy_i score _ reg5
+add_i ram food_points ram
+copy ram _ reg0
+copy_i 0 _ reg4
+label update_score
+add_i reg4 1 reg4
+mod_i reg0 10 reg1
+call _ _ load_digit
+div_i reg0 10 reg0
+not_equal_i reg0 0 update_score
+copy_i grow _ reg5
+copy_i 1 _ ram
+label check_body_collision
+copy head_address _ reg5
+sub_i reg5 1 reg5
+label check_collision
+sub head_address reg5 reg4
+equal reg4 length update_sprites
+equal reg0 ram game_over
+sub_i reg5 1 reg5
+jump check_collision _ counter
+
+label game_over
+play_ii note5 _ _
+play_ii note6 _ _
+load_ii 0 _ _
+copy_i 9 _ reg0
+add_i length head_id reg1
+sub_i reg1 1 reg1
+label clear_sprites
+load_ai reg0 _ _
+add_i reg0 1 reg0
+less_equal reg0 reg1 clear_sprites
+set_pos_ii 0 0 _
+load_ii background offset_game_over screen_size
+load_ii continue offset_continue continue_size
+set_pos_ii score1 20644190 _
+set_pos_ii score2 20644170 _
+set_pos_ii score3 20644150 _
+set_pos_ii score4 20644130 _
+set_pos_ii score5 20644110 _
+set_pos_ii score6 20644090 _
+set_pos_ii score7 20644070 _
+copy_i 0 _ reg0
+copy_i 0 _ reg1
+label wait_for_reset
+equal_i keyboard 53 reset
+sub time reg0 reg4
+less_i reg4 500000 wait_for_reset
+copy time _ reg0
+not_equal_i reg1 0 continue_off2
+load_ii continue offset_continue continue_size
+copy_i 1 _ reg1
+jump wait_for_reset _ counter
+label continue_off2
+load_ii continue _ _
+copy_i 0 _ reg1
+jump wait_for_reset _ counter
+label reset
+copy stack _ last_tick
+copy stack _ mpt
+jump setup _ counter
+
+label update_sprites
+sub head_address length reg5
+add_i reg5 1 reg5
+add_i length head_id reg1
+sub_i reg1 1 reg1
+label update_snake
+greater reg5 head_address update_done
+set_pos reg1 ram _
+add_i reg5 1 reg5
+sub_i reg1 1 reg1
+jump update_snake _ counter 
+label update_done
+
+#return
+copy stack _ last_tick
+copy stack _ mpt
+jump check_time _ counter
+
+#using x-value in reg0
+#and y-value in reg1
+#creates pos in ram
+label create_pos
+shl_i reg1 16 ram
+add ram reg0 ram
+ret _ _ _
+
+#using pos in ram
+#gets x and y values
+#and stores them in reg0 and reg1
+label getxy
+copy ram _ reg0
+shl_i reg0 16 reg0
+shr_i reg0 16 reg0
+copy ram _ reg1
+shr_i reg1 16 reg1
+ret _ _ _
+
+#uses reg0 and reg1
+#spawns food at
+#random unoccupied pos
+label spawn_food
+#rng
+copy time _ reg0
+shr_i reg0 1 reg1
+xor reg0 reg1 reg0
+shl_i reg0 1 reg1
+xor reg0 reg1 reg0
+shr_i reg0 2 reg1
+xor reg0 reg1 reg0
+shr_i reg0 16 reg1
+shl_i reg0 16 reg0
+shr_i reg0 16 reg0
+#convert to x and y
+mod_i reg0 32 reg0
+mod_i reg1 22 reg1
+mul_i reg0 20 reg0
+mul_i reg1 20 reg1
+add_i reg1 40 reg1
+#update food pos
+copy_i food_pos _ reg5
+call _ _ create_pos
+copy ram _ reg0
+copy head_address _ reg5
+label check_occupied
+equal reg0 ram spawn_food
+sub_i reg5 1 reg5
+sub head_address reg5 reg1
+less reg1 length check_occupied
+copy_i food_pos _ reg5
+set_pos_ia food_id ram _
+ret _ _ _
+
+#loads digit sprite in reg1
+#to sprite in place reg4
+label load_digit
+not_equal_i reg1 0 check_digit1
+add_i reg4 1 reg1
+load_ai reg1 offset_0 digit_size
+jump done_loading_digit _ counter
+label check_digit1
+not_equal_i reg1 1 check_digit2
+add_i reg4 1 reg1
+load_ai reg1 offset_1 digit_size
+jump done_loading_digit _ counter
+label check_digit2
+not_equal_i reg1 2 check_digit3
+add_i reg4 1 reg1
+load_ai reg1 offset_2 digit_size
+jump done_loading_digit _ counter
+label check_digit3
+not_equal_i reg1 3 check_digit4
+add_i reg4 1 reg1
+load_ai reg1 offset_3 digit_size
+jump done_loading_digit _ counter
+label check_digit4
+not_equal_i reg1 4 check_digit5
+add_i reg4 1 reg1
+load_ai reg1 offset_4 digit_size
+jump done_loading_digit _ counter
+label check_digit5
+not_equal_i reg1 5 check_digit6
+add_i reg4 1 reg1
+load_ai reg1 offset_5 digit_size
+jump done_loading_digit _ counter
+label check_digit6
+not_equal_i reg1 6 check_digit7
+add_i reg4 1 reg1
+load_ai reg1 offset_6 digit_size
+jump done_loading_digit _ counter
+label check_digit7
+not_equal_i reg1 7 check_digit8
+add_i reg4 1 reg1
+load_ai reg1 offset_7 digit_size
+jump done_loading_digit _ counter
+label check_digit8
+not_equal_i reg1 8 digit9
+add_i reg4 1 reg1
+load_ai reg1 offset_8 digit_size
+jump done_loading_digit _ counter
+label digit9
+add_i reg4 1 reg1
+load_ai reg1 offset_9 digit_size
+label done_loading_digit
+ret _ _ _

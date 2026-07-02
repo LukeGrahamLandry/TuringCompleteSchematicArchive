@@ -1,0 +1,155 @@
+# ===================================
+# =========== registers =============
+# ===================================
+const r_i 0 # reg for index
+const r_tmp 1 # reg for tmp
+const r_param 2 # reg for param
+
+# ===================================
+# =========== constants =============
+# ===================================
+const final_i 16 # 15
+const tetrominos_num 7 - 1 # start 0
+
+jmp _start _
+# ===================================
+# =========== functions =============
+# ===================================
+
+# ===== start draw_tetris_table =====
+label _draw_tetris_table
+put r_i 0
+put regram 0
+label _draw_tetris_table_pt_1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0
+add_d regram 1
+put ram 0x515AF32E
+add_d regram 1
+put ram 0
+add_d regram 1
+put ram 0x515AF32E
+add_d regram 1
+put ram 0
+add_d regram 1
+put ram 0x515AF32E
+add_d regram 1
+put ram 0
+add_d regram 1
+put ram 0x515AF32E
+add_d regram 1
+put ram 0
+add_d regram 1
+put ram 0x515AF32E
+add_d regram 1
+put ram 0x515AF30F
+
+inc r_i _
+add_d regram 69
+cmp_d r_i 11
+je _draw_tetris_table_pt_2 _
+jmp _draw_tetris_table_pt_1
+label _draw_tetris_table_pt_2
+
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+
+ret _ _
+# ====== end draw_tetris_table ======
+
+# ====== start draw tetrominos ======
+label _draw_tetrominos
+# initialisation
+# r_i
+put r_i 0
+# reghdd
+mul_d r_param 16
+mov r_tmp reghddpos
+neg r_tmp _
+mov reghdd r_tmp
+mov reghdd r_param
+mov reghdd 0
+
+# regram
+put regram 0
+# r_tmp
+put r_tmp 0
+
+label _draw_tetrominos_loop
+
+mov ram hdd
+put reghdd 1
+put reghdd 0
+inc regram _
+
+mov ram hdd
+put reghdd 1
+put reghdd 0
+inc regram _
+
+mov ram hdd
+put reghdd 1
+put reghdd 0
+inc regram _
+
+mov ram hdd
+put reghdd 1
+put reghdd 0
+add_d regram 77
+
+inc r_i _
+cmp_d r_i 4
+je _end_draw_tetrominos_loop _
+jmp _draw_tetrominos_loop _
+label _end_draw_tetrominos_loop
+ret _ _
+# ====== end draw tetrominos ========
+
+# ========== start timer ===========
+label _timer
+put r_tmp 1
+timer 3 on
+
+label timer_loop
+cmp r_tmp regtime
+jne timer_loop _
+
+timer off _
+ret _ _
+label _end_timer
+# =========== end timer ============
+
+# ===================================
+# ============= srtart ==============
+# ===================================
+label _start
+
+label _game_loop
+call _draw_tetris_table _
+random 0 1 # tetrominos_num
+mov r_param regrand # r param for 
+call _draw_tetrominos _
+call _timer _
+jmp _game_loop _

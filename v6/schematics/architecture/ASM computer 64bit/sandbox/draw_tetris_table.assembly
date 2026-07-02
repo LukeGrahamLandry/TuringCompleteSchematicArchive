@@ -1,0 +1,58 @@
+const r_i 0
+
+label _draw_tetris_table_pt_1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0
+add_d regram 1
+put ram 0x515AF32E
+add_d regram 1
+put ram 0
+add_d regram 1
+put ram 0x515AF32E
+add_d regram 1
+put ram 0
+add_d regram 1
+put ram 0x515AF32E
+add_d regram 1
+put ram 0
+add_d regram 1
+put ram 0x515AF32E
+add_d regram 1
+put ram 0
+add_d regram 1
+put ram 0x515AF32E
+add_d regram 1
+put ram 0x515AF30F
+
+inc r_i _
+add_d regram 69
+cmp_d r_i 11
+je _draw_tetris_table_pt_2 _
+jmp _draw_tetris_table_pt_1
+label _draw_tetris_table_pt_2
+
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+

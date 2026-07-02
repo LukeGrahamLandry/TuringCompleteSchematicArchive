@@ -1,0 +1,52 @@
+const red_a 0xFF000061
+const green_a 0x00FF0061
+put reg0 1
+put reg1 42 # key a 
+put reg2 0
+jmp main_loop _
+# fucntion
+label verify_valid_key_start
+cmp reg1 regkey
+jne verify_valid_key_end _
+put reg3 42
+label verify_valid_key_end
+ret _ _
+# logic
+
+label main_loop
+
+timer 2 on
+label timer_loop
+call verify_valid_key_start _
+cmp reg0 regtime
+je exit_timer_loop _
+jmp timer_loop _
+label exit_timer_loop
+timer off _
+
+cmp reg3 reg1
+jne put_red_a _
+jmp put_green_a _
+label put_red_a
+put ram red_a
+add regram reg0
+jmp main_loop
+
+label put_green_a
+put ram green_a
+add regram reg0
+put reg3 0
+jmp main_loop
+
+#put ram red_a
+#mov reg3 regkey
+
+#cmp reg3 reg1
+#je add_a _
+#cmp reg3 reg2
+#je add_a _
+#jmp exit_timer_loop _
+
+#label add_a
+#add regram reg0
+#jmp main_loop _

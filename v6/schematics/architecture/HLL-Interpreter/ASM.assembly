@@ -1,0 +1,71 @@
+label readMethod
+mov in1 reg0
+jeq|i2 reg0 0 EOF
+save1 reg1 reg0
+add|i2 reg1 1 reg1
+jne|i2 reg0 "(" readMethod
+mov|i1 0 reg1
+load1 reg1 reg0
+jne|i2 reg0 "p" notPrintln
+add|i2 reg1 1 reg1
+load1 reg1 reg0
+jne|i2 reg0 "r" notPrintln
+add|i2 reg1 1 reg1
+load1 reg1 reg0
+jne|i2 reg0 "i" notPrintln
+add|i2 reg1 1 reg1
+load1 reg1 reg0
+jne|i2 reg0 "n" notPrintln
+add|i2 reg1 1 reg1
+load1 reg1 reg0
+jne|i2 reg0 "t" notPrintln
+add|i2 reg1 1 reg1
+load1 reg1 reg0
+jne|i2 reg0 "l" notPrintln
+add|i2 reg1 1 reg1
+load1 reg1 reg0
+jne|i2 reg0 "n" notPrintln
+mov in1 reg0
+jne|i2 reg0 "\"" readVar
+mov|i1 0 reg1
+label readString
+mov in1 reg0
+jeq|i2 reg0 "\"" newLine
+mov reg0 out1
+jmp readString
+label newLine
+mov|i1 "\r" out1
+mov|i1 "\n" out1
+jmp end
+label readVar
+label notPrintln
+mov|i1 0 reg1
+load1 reg1 reg0
+jne|i2 reg0 "p" notPrint
+add|i2 reg1 1 reg1
+load1 reg1 reg0
+jne|i2 reg0 "r" notPrint
+add|i2 reg1 1 reg1
+load1 reg1 reg0
+jne|i2 reg0 "i" notPrint
+add|i2 reg1 1 reg1
+load1 reg1 reg0
+jne|i2 reg0 "n" notPrint
+add|i2 reg1 1 reg1
+load1 reg1 reg0
+jne|i2 reg0 "t" notPrint
+mov in1 reg0
+jne|i2 reg0 "\"" readVar
+mov|i1 0 reg1
+label readString2
+mov in1 reg0
+jeq|i2 reg0 "\"" end
+mov reg0 out1
+jmp readString2
+label notPrint
+label end
+mov in1 reg0
+mov in1 reg0
+jmp readMethod
+label EOF
+jmp EOF

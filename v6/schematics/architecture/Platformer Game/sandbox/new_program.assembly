@@ -1,0 +1,7 @@
+
+mov+i 2 0
+mov+i 3 1
+
+lrom+i 1 r0
+
+mov r0 display

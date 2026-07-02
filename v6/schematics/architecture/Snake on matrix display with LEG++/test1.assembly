@@ -1,0 +1,114 @@
+const border_top 11
+const border_left 19
+const border_right 44
+const border_bottom 36
+
+# =========================
+# TOP BORDER
+# =========================
+
+set 16 _ reg0
+
+label top_border_loop
+
+tileselB reg0 border_top _
+
+eqB reg0 16 top_left
+eqB reg0 40 top_right
+goto _ _ top_middle
+
+label top_left
+drawlineAB 240 5 _
+goto _ _ top_release
+
+label top_middle
+drawlineAB 255 5 _
+goto _ _ top_release
+
+label top_right
+drawlineAB 15 5 _
+
+label top_release
+release 255 255 255
+
+incr reg0 8 reg0
+inf|littB reg0 48 top_border_loop
+
+# =========================
+# BOTTOM BORDER
+# =========================
+
+set 16 _ reg0
+
+label bottom_border_loop
+
+tileselB reg0 border_bottom _
+
+eqB reg0 16 bottom_left
+eqB reg0 40 bottom_right
+goto _ _ bottom_middle
+
+label bottom_left
+drawlineAB 240 0 _
+goto _ _ bottom_release
+
+label bottom_middle
+drawlineAB 255 0 _
+goto _ _ bottom_release
+
+label bottom_right
+drawlineAB 15 0 _
+
+label bottom_release
+release 255 255 255
+
+incr reg0 8 reg0
+inf|littB reg0 48 bottom_border_loop
+
+# =========================
+# LEFT BORDER
+# =========================
+
+set 12 _ reg1
+
+label left_border_tiles
+
+tileselA border_left reg1 _
+
+set 0 _ reg4
+
+label left_border_lines
+
+drawlineA 8 reg4 _
+
+incr reg4 1 reg4
+inf|littB reg4 6 left_border_lines
+
+release 255 255 255
+
+incr reg1 6 reg1
+inf|littB reg1 37 left_border_tiles
+
+# =========================
+# RIGHT BORDER
+# =========================
+
+set 12 _ reg1
+
+label right_border_tiles
+
+tileselA border_right reg1 _
+
+set 0 _ reg4
+
+label right_border_lines
+
+drawlineA 16 reg4 _
+
+incr reg4 1 reg4
+inf|littB reg4 6 right_border_lines
+
+release 255 255 255
+
+incr reg1 6 reg1
+inf|littB reg1 37 right_border_tiles

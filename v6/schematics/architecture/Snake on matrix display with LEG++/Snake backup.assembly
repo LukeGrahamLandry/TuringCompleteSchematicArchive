@@ -1,0 +1,348 @@
+const seed 42
+const speed 100
+
+#couleurs
+const Rcadre 128
+const Gcadre 128
+const Bcadre 128
+
+#coordonnées cadre de jeu
+
+const game_width 24
+const game_height 24
+
+const decalhaut 18
+const decalbas 6
+const decalgauche 20
+const decaldroite 20
+
+#coordonnées pomme 
+const pommex1 10
+const pommey1 8
+const pommex2 53
+const pommey2 39
+
+const keyup 16
+const keydown 18
+const keyleft 15
+const keyright 17
+
+const scr_width 64
+const scr_height 48
+
+const slX 0
+const slY 1
+
+const sldir 2
+const slderdir 6
+const ddroite 0
+const dbas 1
+const dgauche 2
+const dhaut 3
+
+const longueur reg7
+const slpommeX 4
+const slpommeY 5
+
+const slreadfifo 50 
+const slwritefifo 51
+const fifoinit 52
+
+const slseed 3
+
+
+#Initialisation
+#BLACK SCREEN
+color 0 0 0
+label blackscreen
+drawlineALL|A 255 reg0 _
+incr reg0 1 reg0
+infB reg0 8 blackscreen
+releaseALL _ _ _
+
+#CADRE
+color Rcadre Gcadre Bcadre
+label cadre
+#Bord haut
+tileAB decalgauche-4 decalhaut-1 _
+drawlineAB 31 5 _
+
+tileAB decalgauche+4 decalhaut-1 _
+drawlineAB 255 5 _
+
+tileAB decalgauche+12 decalhaut-1 _
+drawlineAB 255 5 _
+
+tileAB decalgauche+20 decalhaut-1 _
+drawlineAB 248 5 _
+
+tileAB decalgauche-4 
+decalhaut+game_height _
+drawlineAB 31 0 _
+
+tileAB decalgauche+4 
+decalhaut+game_height _
+drawlineAB 255 0 _
+
+tileAB decalgauche+12 
+decalhaut+game_height _
+drawlineAB 255 0 _
+
+
+tileAB decalgauche+20 
+decalhaut+game_height _
+drawlineAB 248 0 _
+
+releaseALL _ _ _
+
+set decalgauche-1 _ reg0
+set decalhaut-1 _ reg1
+
+
+
+label bordgauche
+draw reg0 reg1 _
+incr reg1 1 reg1
+infB reg1 
+game_height+decalhaut bordgauche
+
+#INITIALISATION GAME
+#Snake XY
+set slX _ slot
+set 32 _ ram
+set slY _ slot
+set 24 _ ram
+
+#FIFO
+set slreadfifo _ slot
+set fifoinit _ ram
+set slwritefifo _ slot
+set fifoinit _ ram
+#snake
+set slX _ slot
+copy ram in reg0
+set slY _ slot
+copy ram in reg1
+color 255 255 255
+draw reg0 reg1 _ #snake
+call _ _ enqueue
+#seed pomme
+set slseed _ slot
+set seed _ ram
+#pomme
+call _ _ manger_pomme
+
+label repeat_exec
+callif|eqB keyboard keyup dir_up
+callif|eqB keyboard keydown dir_down 
+callif|eqB keyboard keyleft dir_left
+callif|eqB keyboard keyright dir_right
+
+callif|supeq|littB timer speed move
+
+releaseALL _ _ _
+
+goto _ _ repeat_exec
+
+
+label dir_up
+set 0 _ keyboard
+set slderdir _ slot
+retif|eqB ram dbas _
+set sldir _ slot
+set dhaut _ ram
+ret _ _ _
+
+label dir_down
+set 0 _ keyboard
+set slderdir _ slot
+retif|eqB ram dhaut _
+set sldir _ slot
+set dbas _ ram
+ret _ _ _
+
+label dir_left
+set 0 _ keyboard
+set slderdir _ slot
+retif|eqB ram ddroite _
+set sldir _ slot
+set dgauche _ ram
+ret _ _ _
+
+label dir_right
+set 0 _ keyboard
+set slderdir _ slot
+retif|eqB ram dgauche _
+set sldir _ slot
+set ddroite _ ram
+ret _ _ _
+
+label move
+set 0 _ timer
+set sldir _ slot
+copy ram in reg0
+callif|eqB ram dhaut decrY
+set sldir _ slot
+callif|eqB ram dbas incrY
+set sldir _ slot
+callif|eqB ram dgauche decrX
+set sldir _ slot
+callif|eqB ram ddroite incrX
+set slderdir _ slot
+copy reg0 in ram
+set slX _ slot
+copy ram in reg0
+set slY _ slot
+copy ram in reg1
+call _ _ scanXY
+eqB reg2 1 gameover
+color 255 255 255
+draw reg0 reg1 _
+call _ _ enqueue
+call _ _ verifier_pomme
+eqB reg2 0 manger_pomme
+
+call _ _ dequeue
+color 0 0 0
+draw reg0 reg1 _
+ret _ _ _
+
+label decrY
+set slY _ slot
+eqB ram 0 gameover
+decr ram 1 ram
+ret _ _ _
+
+label incrY
+set slY _ slot
+supeqB ram scr_height-1 gameover
+incr ram 1 ram
+ret _ _ _
+
+label decrX
+set slX _ slot
+eqB ram 0 gameover
+decr ram 1 ram
+ret _ _ _
+
+label incrX
+set slX _ slot
+supeqB ram scr_width-1 gameover
+incr ram 1 ram
+ret _ _ _
+
+
+label verifier_pomme
+#(reg0 x, reg1 y)
+set slpommeX _ slot
+copy ram in reg2
+set slpommeY _ slot
+copy ram in reg3
+sub reg0 reg2 reg2
+sub reg1 reg3 reg3
+or reg2 reg3 reg2
+ret _ _ _ #res in reg2
+
+label enqueue
+#(reg0 x, reg1 y)
+set slwritefifo _ slot
+copy ram in slot
+copy reg0 in ram
+incr slot 1 slot
+copy reg1 in ram
+set slwritefifo _ slot
+incr ram 2 ram
+infB ram fifoinit loopfifo
+ret _ _ _
+
+label dequeue
+set slreadfifo _ slot
+copy ram in slot
+copy ram in reg0
+incr slot 1 slot
+copy ram in reg1
+set slreadfifo _ slot
+incr ram 2 ram
+infB ram fifoinit loopfifo
+ret _ _ _ #res in reg 0, reg1
+
+label scanXY
+#(reg0 x, reg1 y)
+set 1 _ reg2 #res
+set 0 _ reg3 #loopcount
+set slreadfifo _ slot
+copy ram in reg4 #slotscan
+label loopscanXY
+copy reg4 in slot
+copy ram in reg5 #xcompare
+incr reg4 1 reg4
+copy reg4 in slot
+copy ram in reg6 #ycompare
+sub reg0 reg5 reg5
+sub reg1 reg6 reg6
+or reg5 reg6 reg5
+retif|eqB reg5 0 _ #return true
+incr reg4 1 reg4
+callif|infB reg4 fifoinit loopfifoscan
+incr reg3 1 reg3
+inf reg3 longueur loopscanXY
+#fin du scan 
+set 0 _ reg2 #return false
+ret _ _ _ #res in reg2
+
+
+label loopfifo
+set fifoinit _ ram
+ret _ _ _
+
+label loopfifoscan
+#(reg4 n)
+set fifoinit _ reg4
+ret _ _ _ #res in reg4
+
+label manger_pomme
+call _ _ random
+callif|supeqB reg0 scr_height moduloY
+copy reg0 in reg3
+call _ _ random
+callif|supeqB reg0 scr_width moduloX
+copy reg3 in reg1
+call _ _ scanXY
+eqB reg2 1 manger_pomme
+#dessiner pomme
+color 255 0 0
+draw reg0 reg1 _
+#maj coordonnées pomme
+set slpommeX _ slot
+copy reg0 in ram
+set slpommeY _ slot
+copy reg1 in ram
+incr longueur 1 longueur
+ret _ _ _
+
+label moduloX 
+#(reg0 n)
+subB reg0 scr_width reg0
+supeqB reg0 scr_width moduloX
+ret _ _ _ #res in reg0
+
+label moduloY 
+#(reg0 n)
+subB reg0 scr_height reg0
+supeqB reg0 scr_height moduloY
+ret _ _ _ #res in reg0
+
+label random
+set slseed _ slot
+copy ram in reg0
+shl reg0 3 reg1
+xor reg0 reg1 reg0
+shr reg0 5 reg1
+xor reg0 reg1 reg0
+shl reg0 4 reg1
+xor reg0 reg1 reg0
+copy reg0 in ram
+ret _ _ _ #res in reg0
+
+label gameover
+goto _ _ gameover

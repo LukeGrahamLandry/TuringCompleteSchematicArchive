@@ -1,0 +1,142 @@
+# ==================================
+# =========== registers ============
+# ==================================
+const r_i 0 # reg for index
+const r_j 1
+const r_tmp 2 # reg for tmp
+const r_line_i 3 # indicate line idx
+const r_move_i 4 # calcul from line
+const r_key 5
+# ==================================
+# =========== constants ============
+# ==================================
+const final_i 8 # 15
+
+# ==================================
+# =========== functions ============
+# ==================================
+
+# ==================================
+# ============= srtart =============
+# ==================================
+put r_line_i 0
+
+label _start
+
+
+label _draw_tetrominos
+# initialisation
+put r_i 0
+put r_tmp 0
+
+label _loop
+# loop condition
+cmp_d r_i final_i
+je _end_loop _
+
+# position in tetrominos
+mov r_tmp r_i
+inc r_tmp _
+mod_d r_tmp 5
+cmp_d r_tmp 0
+jne _draw _
+add_d regram 76
+
+
+label _draw
+# drawing
+mov ram hdd
+put reghdd 1
+put reghdd 0
+inc regram _
+
+# end off loop, inc index
+inc r_i _
+jmp _loop _
+
+label _end_loop
+put regram 0
+mov r_key reghddpos
+sub reghdd r_key
+put reghdd 0
+
+# ========== start timer ===========
+put r_tmp 1
+timer 3 on
+
+label timer_loop
+cmp r_tmp regtime
+jne timer_loop _
+
+timer off _
+# =========== end timer ============
+
+# ======== start reset ram =========
+put regram 0
+put r_i 0
+
+label _draw_tetris_table_pt_1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0
+add_d regram 1
+put ram 0x515AF32E
+add_d regram 1
+put ram 0
+add_d regram 1
+put ram 0x515AF32E
+add_d regram 1
+put ram 0
+add_d regram 1
+put ram 0x515AF32E
+add_d regram 1
+put ram 0
+add_d regram 1
+put ram 0x515AF32E
+add_d regram 1
+put ram 0
+add_d regram 1
+put ram 0x515AF32E
+add_d regram 1
+put ram 0x515AF30F
+
+inc r_i _
+add_d regram 69
+cmp_d r_i 11
+je _draw_tetris_table_pt_2 _
+jmp _draw_tetris_table_pt_1
+label _draw_tetris_table_pt_2
+
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+
+put regram 0
+# ========= end reset ram ==========
+
+inc r_line_i _
+mov r_move_i r_line_i
+mul_d r_move_i 80
+add regram r_move_i
+
+jmp _start _

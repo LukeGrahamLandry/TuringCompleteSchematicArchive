@@ -1,0 +1,18 @@
+# Test too-large Y coordinate
+1 17 3 -1
+1 18 3 -1
+1 513 3 -1
+1 999 3 -1
+
+# Test too-large X coordinate
+29 4 3 -1
+30 4 3 -1
+513 4 3 -1
+999 4 3 -1
+
+# Test running off the right side
+28 1 4 3 4 3 4 3 4 3 4 3 -1
+
+0 0 3 3 3 -1
+5 10 4 3 2 1 0 5 4 3 2 1 0 -999
+3 4 2 2 -10

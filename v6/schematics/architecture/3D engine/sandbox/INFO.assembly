@@ -1,0 +1,87 @@
+#___INFO___
+
+
+
+#--General Info--#
+#This is a 3D-engine in Turing Complete
+#Because of performance, this engine renders only wireframes(edges) and does not draw full surfaces
+#Even with the optimisation above, this engine is still very slow. For me it takes about 15 seconds to render the default cube
+#You can choose two default models I have added (a cube and the turing complete logo in 3D), or you can load your own
+#For more info on how to change models or load your own, go to "--How to change models--"
+#If you have any issues, you can first scroll down to "--Common issues and fixes--" at the bottom of this page and if the issue persists you can write a comment about the issue and I will try to fix it as soon as possible
+
+
+
+#--How to start the 3D-engine--#
+#To start the 3D-enginge, go to the top and press "3D-engine", then press the "Run Faster"-button (>>) to the left of the code
+#After doing that you need to close this window (the "Assembly Editor) and the go to the big gray screen
+#IMPORTANT! It may take a while before you see anything
+
+
+
+#--How to change values--
+#To change values you will have to use either integers (regular numbers) or doubles (decimal numbers)
+#I have in the code file ("3D-engine") marked out which values uses ints and which uses doubles
+#For the values that uses integers you can just write your number
+#For the values that uses doubles you need to use double_ and then your number
+#Scroll down to "How to use doubles" for more info on how doubles work
+
+
+#-How to use doubles-
+#For the values that uses doubles you need to use double_ and then your number
+#For example if you want 5 as a double, you should write double_5 and NOT 5
+#You can use the following numbers (with double_ infront): 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 18, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 1000 
+
+#How to use decimals:
+#To use decimals, you need to write double_0_point_ and then the number after the decimal. If you for example want to use 0.3, you should write double_0_point_3
+#The possible decimals (with double_0_ infront) are: 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9
+
+#How to use negative numbers:
+#To use negative numbers, just write your number+minus. For example negative 1 would be double_1+minus
+
+#IMPORTANT! If you want a number that isn't on the list above, scroll down to "How to add a double value that isn't on the list"
+#IMPORTANT! If you for example want the number 1.5 you CANNOT do double_1+double_0_point_5. You need to add double_1_point_5 yourself. To do this, please scroll down to "-How to add a double value that isn't on the list-"
+#Note. If you want to know more about how doubles work click on "COMMANDS", right under "Assembly Editor" and to the right of "3D-enginge" and then scroll down to "DOUBLE ALU"
+
+
+#-How to add a double value that isn't on the list-
+#If you want a number that isn't on the list you can go to https://www.binaryconvert.com/convert_double.html, then type your decimal number under "Decimal" and then hit "Convert to Binary"
+#After this copy the number in the bottom left right under "Binary" (the one that starts with "0x") and then write const double_(your number) and then the value you got in "3D-engine" under "-Double values-"
+#If you for example want the number 11 as a double you can go to https://www.binaryconvert.com/convert_double.html, then write 11 under decimal and then you copy the number right under Binary (in this case 0x4026000000000000) and then in Turing Complete in "3D-engine" under "-Double values-" write const double_11 0x4026000000000000
+
+
+#-How to change rotation-#
+#Rotation uses angles that are stored as something called radians (it's a way to measure angles. For more info please scroll down to "--What is a radian?--")
+#Since it would be quite anoying to use radians all the time I have made it so that you can use degrees (though under the hood the program still uses radians)
+#To write an angle, you write const (your angle) and then _degrees isnide "3D-enginge" under "Angles in degrees"
+#IMPORTANT! The angles needs to be a multiple of 15, and in the range 0-360
+#If you want an angle that isn't a multiple of 15 you can follow the instructions under "-How to add an angle that isn't a multiple of 15-"
+
+
+#-How to add an angle that isn't a multiple of 15-
+#First of all search for "(The angle you want) degrees in radians"
+#Then go "https://www.binaryconvert.com/convert_double.html" and paste the value you got under "Decimal"
+#After this press convert to binary and use the number under Binary that begins with 0x
+#Then go to the "3D-engine" tab and under "Angles in degrees" write "const (your angle)_degrees (the number you got)"
+#If you for example want the angle 25 degrees, search for "25 degrees in radians", you will get 0.436332313, and then you can go to "https://www.binaryconvert.com/convert_double.html" and then under "Decimal" write in that number (0.436332313) and then press convert to binary. When you have done that you will in the bottom left corner see "0x3FDBECDE5DA1796B". Copy that number, go back to Turing Complete, scroll up to "Angles in degrees" and write "const 25_degrees 0x3FDBECDE5DA1796B"   
+
+
+
+#--How to change models--#
+#To change models follow the instructions on the purple wires a little bit above the big gray screen (you have to close the Assembly Editor first)
+#When loading other models than the cube, you will probably have to modify scale, position and rotation. For more info abouit this go to "--How to change values--"
+
+
+#--Common issues and fixes--
+#If nothing appears on screen try the following
+#Wait a little bit longer (big files takes ages)
+#Check that you have pressed the "Run-Faster"-button
+#Try increasing and decreasing pos_z
+#Try decreasing scale_x, scale_y and scale_z
+
+#If your model doesn't load try the following:
+#Check that the model mode is 2 (Go to the purple wires in above the gray screen around the file components for more info on how to change the model mode)
+#Check that your model is an OBJ-file and if it isn't you need either convert it or find another model
+#Open your OBJ-file and check if the file has any vertex normals(vn), uv coordinates etc. If it has delete those lines
+#Try decreasing scale_x, scale_y and scale_z
+#Check that you have the "3D-engine" tab open when loading and NOT this tab("INFO") or the "COMMANDS" tab.

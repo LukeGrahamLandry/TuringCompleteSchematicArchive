@@ -1,0 +1,52 @@
+# tetromino
+# ================ 1 ================
+# .
+# .
+# .
+# .
+put hdd 0xFF000061
+put reghdd 1
+put hdd 0xFF000062
+put hdd 0xFF000063
+put hdd 0xFF000064
+
+put hdd 0xFF000065
+put hdd 0xFF000066
+put hdd 0xFF000067
+put hdd 0xFF000068
+
+put hdd 0xFF000069
+put hdd 0xFF000070
+put hdd 0xFF000071
+put hdd 0xFF000072
+
+put hdd 0xFF000073
+put hdd 0xFF000074
+put hdd 0xFF000075
+put hdd 0xFF000076
+
+
+# ================ 2 ================
+# 
+#
+#  ..
+# ..
+put hdd 0x00FF0061
+put hdd 0x00FF0062
+put hdd 0x00FF0063
+put hdd 0x00FF0064
+
+put hdd 0x00FF0065
+put hdd 0x00FF0066
+put hdd 0x00FF0067
+put hdd 0x00FF0068
+
+put hdd 0x00FF0069
+put hdd 0x00FF0070
+put hdd 0x00FF0071
+put hdd 0x00FF0072
+
+put hdd 0x00FF0073
+put hdd 0x00FF0074
+put hdd 0x00FF0075
+put hdd 0x00FF0076

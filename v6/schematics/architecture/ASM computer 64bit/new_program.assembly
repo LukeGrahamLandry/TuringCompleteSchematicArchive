@@ -1,0 +1,15 @@
+jmp bbb _
+label aaa
+jmp 6 _
+put reg0 10
+cmp reg0 reg1
+je 6 _
+cmp reg0 reg1
+jne ccc _
+
+
+put reg0 13
+label bbb
+jmp aaa _
+label ccc
+put reg3 2

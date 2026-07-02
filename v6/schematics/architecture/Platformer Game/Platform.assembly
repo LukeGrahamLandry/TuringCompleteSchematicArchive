@@ -1,0 +1,2114 @@
+#SHOULD RUN AT 30kHZ for nice 60 FPS
+
+#**********************************
+#for proper framerate
+const waitTime 500
+const showMaxTicks 1
+
+#****** Controls ******************
+const key_left  69 #42
+const key_right 71 #44
+const key_jump  68 #29
+const key_punch 55
+
+const gpu_cmd 256+2
+const gpu_id 256+3
+const gpu_pos 256+4
+const gpu_size 256+5
+const gpu_draw 256+6 #draws on write
+
+const 16b 0x10000
+
+#******** RAM ADR *****************
+const charX 0+8
+const charY 1+8
+const anim 2+8
+	#0 = idle
+	#1 = walk
+	#2 = air
+const side 3+8
+const frame 4+8
+const frameTime 5+8
+const frameLen 6+8
+const frameCount 7+8
+const framePosX 8+8
+const framePosY 9+8
+const blink 10+8
+const onFloor 11+8
+const velY 12+8
+const velX 13+8
+const gravTime 14+8
+const gravLen 15+8
+const decelTime 16+8
+const decelLen 17+8
+const accelX 18+8
+const accelTime 19+8
+const accelLen 20+8
+const maxFrameTicks 21+8
+const screenLoc 22+8
+const loopCount 23+8
+const levelLength 24+8
+const jumpHoldTime 25+8
+const jumpHold 26+8
+const levelLengthTile 27+8
+const movX 28+8
+const movY 29+8
+const dead 30+8
+const debug 31+8
+const debugWorst 40
+const win 41
+const winPose 42
+const endGfxID 43
+const endGfxEnter 44
+const avgTicks 45
+const avgFrame 46
+const objX 47
+const objY 48
+const objSide 49
+const curObj 50
+const objType 51
+const objDying 52
+const objDead 53
+const objCnt 54
+const curLoadObj 55
+const curRefObj 56
+const objVelY 57
+const objData 58
+const objDataCnt 59
+const objStartY 60
+const punching 61
+const punchLen 62
+const punchTime 63
+const punchSide 64
+const rePunchTime 65
+const punchLoc 66
+const animWidth 67
+const animWidthChanged 68
+const objWalkSpeed 69
+
+const objRef 256 #idk
+
+const objects 778
+const tiles 1024
+
+
+#******** Const Values ************
+
+const init_levelLenght 128*32
+const init_charX 32*3
+const init_charY 10*32
+
+const speed 0
+const airSpeed 1
+const topSpeed 4
+const topRunAnimTime 3
+
+const jumpStr 6
+const jumpRelSpeed 4
+const jumpHoldMax 7
+
+const timeBetweenPunches 20
+
+const init_gravLen 2
+
+const accelLenFloor 5
+const accelLenAir 4#5
+const decelLenFloor 4
+
+
+#******** GFX Constants **********
+const bg1ID 0
+const levelID 1
+const charID 8
+const objID 3
+
+#******** Tile Codes *************
+const tile_open 0
+const tile_solid 1
+const tile_floor 2
+const tile_win 3
+
+#**********************************
+
+#------ INIT ------------------
+
+
+#ja startEndGameLoop
+
+label init
+
+mov+i init_charX charX
+mov+i init_charY charY
+mov+i init_levelLenght levelLength
+
+mov+i 0 side
+mov+i 0 onFloor
+mov+i 0 screenLoc #1400 screenLoc
+mov+i init_gravLen gravLen
+mov+i decelLenFloor decelLen
+mov+i accelLenFloor accelLen
+mov+i 0 loopCount
+mov+i 0 velX
+mov+i 0 velY
+mov+i 0 movX
+mov+i 0 movY
+mov+i 0 dead
+mov+i 0 win
+mov+i 0 winPose
+mov+i 0 objDead
+mov+i 0 objDying
+mov+i 0 objCnt
+mov+i -1 curObj
+mov+i 0 objDead
+mov+i 32 animWidth
+mov+i 1 animWidthChanged
+
+mov+i 2*32+16 objX #17,11
+mov+i 10*32+16 objY
+mov+i 1 objSide
+
+mov+i 10 endGfxID
+mov+i 20 endGfxEnter
+
+jsr resetGPU
+
+#------ LOADING ------------------
+# -- BG1 --
+mov+i 2 gpu_cmd
+mov+i bg1ID gpu_id
+mov+i 0 gpu_pos
+mov+i 0 gpu_size
+mov+i 0 gpu_draw
+
+mov+i_ 1 gpu_cmd
+mov+i_ bg1ID gpu_id
+mov+i_ 32*5 gpu_pos
+mov+i_ 480*16b+2048 gpu_size
+mov+i_ 0 gpu_draw
+
+lram+i levelLength r0
+add+i 1 r0 r0
+add+_i r0 1 r0
+add+i 480*16b r0 r0
+
+# -- Level --
+mov+i 2 gpu_cmd
+mov+i levelID gpu_id
+mov+i 0 gpu_pos
+mov+i 0 gpu_size
+mov+i 0 gpu_draw
+
+mov+i_ 1 gpu_cmd
+mov+i_ levelID gpu_id
+mov+i_ 0 gpu_pos
+mov+i_ 32*16b+32*20 gpu_pos
+mov r0 gpu_size
+mov+i_ 0 gpu_draw
+
+# -- Load Level --
+jsr loadLevel
+
+jsr spawnInitObj
+
+#mov+i 1 objType
+
+ja loop
+
+#------ MAIN LOOP-----------------
+label loop
+
+mov+i 0 counter
+
+jne+i 0 win notWinLoop
+	inc loopCount
+label notWinLoop
+
+jsr detectWin
+jne+i 0 winPose notLoopWin
+	jsr updateObjects
+	jsr updateObjGraphics
+	jsr movement #58/49 ticks
+	jsr physics #max 230 ticks
+label notLoopWin
+
+#jsr updateCharLoc #14/12 ticks
+jsr state #49/36 ticks
+jsr spawnEnemies
+jsr scroll #21/19 ticks
+
+jne+i 1 winPose notEndPose
+	#ja startEndGameLoop
+	ja showEndScreen
+label notEndPose
+
+#max total 344/327
+
+jsr wait
+ja loop
+
+#--------------------------------
+label spawnInitObj
+
+mov+i 0 r4 #iterator
+
+label nxtSpawnInit
+add+i objRef r4 r0
+
+
+lram r0 r1 #load obj ref
+#je r1 curObj checkSpawnEnd
+je+i 0 r1 endLoopSpawnInit
+	ja spawnEnemy
+label endLoopSpawnInit
+
+inc r4
+je+i 640/32 r4 endSpawnInit
+ja nxtSpawnInit
+
+label endSpawnInit
+ret
+
+
+#---------------------------------
+label spawnEnemies
+
+sng velX r0
+je+i 1 r0 checkSpawnsLeft
+	add+i 640 screenLoc r0
+	div+_i r0 32 r0
+	#mov r0 display 
+	add+i objRef r0 r0
+	
+	lram r0 r1
+	#mov r1 display
+	je r1 curObj checkSpawnEnd
+	je+i 0 r1 checkSpawnEnd
+		ja spawnEnemy
+	ret
+label checkSpawnsLeft
+	#add+i 640 screenLoc r0
+	div+_i screenLoc 32 r0
+	#mov r0 display
+	je+i 0 r0 skipMin
+		dec r0
+	label skipMin
+	add+i objRef r0 r0
+	
+	lram r0 r1
+	#mov r1 display
+	je r1 curObj checkSpawnEnd
+	je+i 0 r1 checkSpawnEnd
+		ja spawnEnemy
+	ret
+label checkSpawnEnd
+ret
+
+#-
+label spawnEnemy
+#r1 ref
+mov r1 curObj
+dec r1#-1 cause theres no enemy0
+mul+i 4 r1 r1
+add+i objects r1 r1
+
+lram r1 objX
+inc r1
+lram r1 objY
+inc r1
+lram r1 objSide
+inc r1
+lram r1 objType
+
+mov+i 0 objDying
+mov+i 0 objDead
+mov objY objStartY
+mov+i 0 objVelY
+mov+i 0 objData
+mov+i 0 objDataCnt
+
+ret
+
+#---------------------------------
+label detectWin
+
+add charX screenLoc r0
+div+_i r0 32 r0
+div+_i charY 32 r1
+
+jsr get_tile
+jne+i tile_win r5 noWinDetected
+	mov+i 1 win
+	#mov+i 0 accelX
+	#mov+i 0 accelY
+label noWinDetected
+
+jne+i 1 win endWin
+jne+i 1 onFloor endWin
+	mov+i 1 winPose
+label endWin
+ret
+#---------------------------------
+label hideLevel
+
+mov+i 1 gpu_cmd
+mov+i 0 gpu_id
+mov+i 0 gpu_size
+mov+i 0 gpu_draw
+
+mov+i 1 gpu_cmd
+mov+i 1 gpu_id
+mov+i 0 gpu_size
+mov+i 0 gpu_draw
+
+mov+i 0 gpu_size
+mov+i 1 gpu_cmd
+mov+i objID gpu_id
+mov+i 1 gpu_draw
+
+ret
+
+label showEndScreen
+jsr wait
+jsr hideLevel
+
+# LEVEL COMPLETED
+mov+i 10 endGfxID
+
+mov+i 14*32 r0
+mov+i 0 r1
+
+mov+i 32*8 r2
+mov+i 36 r3
+
+mov+i 294-32*3 r4
+mov+i 140-16 r5
+
+jsr showGfx
+
+# SCORE:
+
+# -- get centiseconds --
+mod+_i loopCount 60 r6
+mul+i 100 r6 r6
+div+_i r6 60 r6
+# --
+
+mov+i 285 r4
+mov+i 140+16+10 r5
+
+add+i 64+16 r4 r4
+
+jsr showNumber
+
+# -- get seconds --
+div+_i loopCount 60 r6
+mod+_i r6 60 r6
+# ---
+
+mov+i 285 r4
+mov+i 140+16+10 r5
+
+add+i 32+8 r4 r4
+
+jsr showNumber
+
+# -- get mins --
+div+_i loopCount 60*60 r6
+mod+_i r6 60 r6
+# ---
+
+mov+i 285 r4
+mov+i 140+16+10 r5
+
+add+i 0 r4 r4
+
+jsr showNumber
+
+#-- Dots --
+mov+i 19*32 r0
+mov+i 2*32 r1
+
+mov+i 8 r2
+mov+i 32 r3
+
+mov+i 285 r4
+mov+i 140+16+10 r5
+
+add+i 17 r4 r4
+
+jsr showGfx
+
+# -- Dot --
+
+mov+i 19*32+16 r0
+mov+i 2*32 r1
+
+mov+i 8 r2
+mov+i 32 r3
+
+mov+i 285 r4
+mov+i 140+16+10 r5
+
+add+i 32+24 r4 r4
+
+jsr showGfx
+
+# -- Press Enter --
+#mov endGfxID endGfxEnter
+label startEndGameLoop
+mov+i 0 r7
+label loopPressEnter
+mov endGfxEnter endGfxID
+
+mov+i 14*32 r0
+mov+i 3*32 r1
+
+mov+i 6*32 r2
+mov+i 32 r3
+
+mov+i 210 r4
+mov+i 140+16+10+32+16 r5
+
+add+i 32 r4 r4
+
+jsr showGfx
+
+label loopPressEnterSkip
+
+inc loopCount
+
+key+i 53 r0 
+key+i 74 r1
+or r0 r1 r0
+jne+i 1 r0 notPressedEnter
+	 #pull ret adr	
+	ja init
+label notPressedEnter
+
+jsr wait
+
+and+i 63 loopCount r0
+jg+_i r0 50 skipFlashEnter
+	ja loopPressEnter
+label skipFlashEnter
+
+#-- Hide Press Return --
+
+mov+i 1 gpu_cmd
+mov endGfxEnter gpu_id
+mov+i 0 gpu_size
+mov+i 0 gpu_draw
+
+ja loopPressEnterSkip
+
+#---------------------------------
+label showNumber
+#r4 posX
+#r5 posY
+#r6 number (2digits)
+
+push r4
+push r5
+
+div+_i r6 10 r7 #higher digit
+
+mul+i 16 r7 r0
+add+i 14*32 r0 r0
+
+mov+i 2*32 r1
+
+mov+i 16 r2
+mov+i 32 r3
+
+sub+_i r4 16 r4
+
+jsr showGfx
+
+mod+_i r6 10 r7 #lower digit
+
+mul+i 16 r7 r0
+add+i 14*32 r0 r0
+
+mov+i 2*32 r1
+
+mov+i 16 r2
+mov+i 32 r3
+
+pull r5
+pull r4
+
+jsr showGfx
+
+ret
+
+#---------------------------------
+label showGfx
+#r0 load posX
+#r1 load posY
+#r2 size X
+#r3 size Y
+#r4 move X
+#r5 move Y
+
+mul+i 16b r0 r0
+add r0 r1 r0
+
+mul+i 16b r3 r3
+add r2 r3 r2
+
+mul+i 16b r5 r5
+add r4 r5 r4
+
+mov+i_ 1 gpu_cmd
+mov endGfxID gpu_id
+mov r0 gpu_pos
+mov r2 gpu_size
+
+mov+i_ 0 gpu_draw
+
+mov+i_ 2 gpu_cmd
+mov endGfxID gpu_id
+mov r4 gpu_pos
+mov r2 gpu_size
+
+mov+i_ 0 gpu_draw
+
+inc endGfxID
+
+ret
+
+#---------------------------------
+label scroll
+
+neg screenLoc r0
+
+mov+i_ 2 gpu_cmd
+mov+i_ levelID gpu_id
+mov r0 gpu_pos
+mov+i_ 2048*16b+480 gpu_size
+mov+i_ 0 gpu_draw
+
+shr+_i screenLoc 3 r0 #/8 for parallax
+neg r0 r0
+
+mov+i_ 2 gpu_cmd
+mov+i_ bg1ID gpu_id
+mov r0 gpu_pos
+mov+i_ 2048*16b+480 gpu_size
+mov+i_ 0 gpu_draw
+
+ret
+#=================================
+# ========== MOVEMENT ============
+#=================================
+label movement
+
+
+#------------- debug press 1 to reset
+key+i 14 r0
+je+i 0 r0 noReset
+	pull r0
+	ja init
+label noReset
+#-----------
+
+je+i 1 punching move_punch
+
+je+i 0 rePunchTime stopRePunchTimer
+	dec rePunchTime
+label stopRePunchTimer
+
+key+i key_punch r0
+je+i 0 r0 noPunch
+je+i 0 onFloor noPunch
+jne+i 0 rePunchTime noPunch
+#--- START PUNCH
+	mov+i 3 r0 #set anim 3
+	jsr setAnim
+	mov+i 1 punching
+
+	#mov+i 0 velX
+	mov+i 0 accelX
+
+	sng velX r0
+	abs velX r1
+	div+_i r1 3 r1
+
+	je+i 0 r0 notNegVelX
+		mul+i -1 r1 r1
+	label notNegVelX
+
+	mov r1 velX
+
+	xor+i 1 punchSide punchSide
+	mov+i timeBetweenPunches rePunchTime
+
+	ja move_punch
+#---
+label noPunch
+
+je+i 0 dead notDead
+	pull r0 #clear stack cause we aint returning
+	ja died
+label notDead
+
+jsr jump
+
+key+i key_right r0
+#================================
+#auto-move right
+#mov+i 1 r0
+#================================
+je+i 0 r0 noRight
+	# -- both dir pressed --
+	key+i key_left r0
+	je+i 1 r0 idle
+
+	je+i 0 onFloor noWalkRight
+		mov+i 0 side
+		mov+i 1 r0 #set anim
+		jsr setAnim
+		
+		sng velX r0 #r0 = velX sign
+		je+i 0 r0 noTurnRight
+			ja idle
+		label noTurnRight
+			mov+i 1 accelX
+			ja endMove
+	label noWalkRight
+		mov+i airSpeed accelX
+		ja endMove
+label noRight
+
+key+i key_left r0
+#================================
+#auto-move LEFT
+#mov+i 1 r0
+#================================
+je+i 0 r0 noLeft
+	je+i 0 onFloor noWalkLeft
+		mov+i 1 side
+		mov+i 1 r0 #set anim
+
+		jsr setAnim
+
+		sng velX r0 #r0 = velX sign
+		je+i 0 velX noTurnLeft
+		je+i 1 r0 noTurnLeft
+			ja idle
+		label noTurnLeft
+			mov+i 0-1 accelX
+			ja endMove
+	label noWalkLeft
+		mov+i 0-airSpeed accelX
+		ja endMove
+label noLeft
+
+#--- IDLE -------------------
+
+label idle
+# -- check if on floor --
+jne+i 1 onFloor idle_air
+
+# -- idle on floor --
+mov+i 0 accelX
+lram+i velX r0
+je+i 0 r0 noWalkAccel
+	
+#-- floor slowdown check --
+mov+i decelTime r0
+mov+i decelLen r1 #countdown
+jsr countdown
+
+je+i 0 r0 endMove
+
+	#-- floor slowdown --
+	sng r0 r1
+	mov+i 1 r2
+	je+i 0 r1 posAccel
+		#negative
+		sub+_i r2 2 r2
+	label posAccel
+
+	sub r0 r2 velX #decelerate
+	ret
+		
+label noWalkAccel
+	mov+i 0 r0
+	jsr setAnim
+label endMove
+ret
+
+#--------------------------------
+label move_punch
+	mov+i 0 velY
+	#mov+i 0 accelY
+
+	
+	ja checkPunchFinish
+
+	jg+_i punchTime 8 noPunchVel
+	#jg+_i punchTime 9 noPunchVel
+		mov+i 0 velX
+
+		je+i 0 side punchNotLeft
+			mul+i -1 velX velX
+		label punchNotLeft
+		ja checkPunchFinish
+	label noPunchVel
+		mov+i -0 velX
+
+		je+i 0 side punchNotRight
+			mul+i -1 velX velX
+		label punchNotRight
+
+	label checkPunchFinish
+
+	jl+_i punchTime 15 noPunchFinish
+		mov+i 0 punching
+		mov+i 0 punchTime
+	label noPunchFinish
+
+	inc punchTime
+
+ret
+
+
+#---------------------------------
+label idle_air
+
+sng velX r1
+je+i 0 velX noAirSlowdown
+je+i 1 r1 airNegVel
+	mov+i -1 accelX
+	ja endAirSlowdown
+label airNegVel
+	mov+i 1 accelX
+	ja endAirSlowdown
+label noAirSlowdown
+	mov+i 0 accelX
+label endAirSlowdown
+ret
+
+#---------------------------------
+label jump
+
+je+i 0 onFloor notOnFloor
+key+i key_jump r0
+#================================
+#mov+i 1 r0 #autojump test
+#=================================
+je+i 0 r0 endJumping
+	jsr startJump
+label endJumping
+ret
+
+label startJump
+#-- start of a jump --
+	mov+i jumpStr velY
+	mov+i 0 onFloor
+	mov gravLen gravTime
+	mov+i accelLenAir accelLen
+	mov+i 1 jumpHold
+	je+i 0 velX skipChangeSide
+		sng velX side
+	label skipChangeSide
+ret
+
+label notOnFloor
+#-- set air anim --
+mov+i 2 r0
+jsr setAnim
+
+sng velY r0
+je+i velY 1 startJumpHolding
+
+#-- jump holding --
+key+i key_jump r0
+je+i 0 r0 notJumpHolding
+	jg+_i jumpHoldTime jumpHoldMax notJumpHolding
+		inc jumpHoldTime
+		ja skipGrav
+	
+#-- not holding --
+label notJumpHolding
+je+i 0 jumpHold falling
+	label startJumpHolding
+	mov+i 0 jumpHold
+	mov+i jumpRelSpeed velY
+	mov+i 0 jumpHoldTime
+
+#-- falling acceleration --
+label falling
+mov+i gravTime r0
+mov+i gravLen r1
+jsr countdown
+	
+je+i 0 r0 skipGrav
+	dec velY
+label skipGrav
+
+ret
+
+#---------------------------------
+# sets anim to r0
+label setAnim
+push r1
+lram+i anim r1
+je r0 r1 skipSetAnim
+	mov r0 anim
+	mov+i 0 frameTime
+	mov+i -1 frame
+
+	jne+i 3 anim notWideAnim
+		mov+i 64 r2
+		ja endWideAnim
+	label notWideAnim
+		mov+i 32 r2
+	label endWideAnim
+
+	#r2 = new animWidth
+	je r2 animWidth noWidthChange
+		mov r2 animWidth
+		mov+i 1 animWidthChanged
+	label noWidthChange
+
+label skipSetAnim
+pull r1
+ret
+
+#=================================
+# COLLISION DETECTION
+#=================================
+label detectCollisions
+
+lram+i velX r0
+mov r0 movX
+
+lram+i velY r0
+mov r0 movY
+
+
+lram+i velX r1
+sng r1 r0
+je+i 1 r0 noRvel
+je+i 0 r1 noRvel
+	jsr col_right
+label noRvel
+
+lram+i velX r1
+sng r1 r0
+je+i 0 r0 noLvel
+	jsr col_left
+label noLvel
+
+
+lram+i velY r1
+sng r1 r0
+je+i 0 r0 noDvel
+je+i 0 r1 noDvel
+	#jsr benchStart
+
+	jsr col_down
+	
+	#jsr benchEndWorst
+label noDvel
+
+lram+i velY r1
+sng r1 r0
+je+i 1 r0 noUvel
+	jsr col_up
+label noUvel
+
+ret
+
+# -------------------------------
+label col_down
+
+lram+i charX r0
+lram+i screenLoc r1
+add r0 r1 r0 #world LocX
+add+i 25 r0 r0 #add width
+#lram+i movX r2
+#add r2 r0 r0 #add mov
+
+lram+i charY r1 #locY
+add+i 31 r1 r1#add height
+push r1
+
+lram+i velY r2
+
+sub r1 r2 r1 #add velY to r1
+
+div+_i r0 32 r0 #get tileX
+div+_i r1 32 r1 #get tileY
+push r1
+jsr get_tile
+
+pull r0 #get tileY
+pull r1 #get corner charWorldX
+
+je+i 3 r5 noColDownR
+je+i 0 r5 noColDownR
+	mul+i 32 r0 r0 #tileWorldY
+	dec r0
+	sub r0 r1 r2
+	neg r2 r2
+	
+	sng r2 r0
+	je+i 0 r2 doColDownR
+	je+i 1 r0 doColDownR
+		nop
+	ja noColDownR
+	label doColDownR
+	mov r2 movY
+
+	jsr landed
+	ret	
+label noColDownR
+
+
+lram+i charX r0
+lram+i screenLoc r1
+add r0 r1 r0 #world LocX
+add+i 8 r0 r0 #add width
+lram+i movX r2
+add r2 r0 r0 #add mov
+
+lram+i charY r1 #locY
+add+i 31 r1 r1#add height
+push r1
+
+lram+i velY r2
+
+sub r1 r2 r1 #add velY to r1
+
+div+_i r0 32 r0 #get tileX
+div+_i r1 32 r1 #get tileY
+push r1
+jsr get_tile
+
+pull r0 #get tileY
+pull r1 #get corner charWorldX
+
+je+i 3 r5 noColDownL
+je+i 0 r5 noColDownL
+	mul+i 32 r0 r0 #tileWorldY
+	dec r0
+	sub r0 r1 r2
+	neg r2 r2
+	
+	sng r2 r0
+	je+i 0 r2 doColDownL
+	je+i 1 r0 doColDownL
+		ja noColDownL
+	label doColDownL
+	 
+	mov r2 movY
+
+	jsr landed
+	ret
+label noColDownL
+
+mov+i 0 onFloor
+ret
+
+# -------------------------------
+label col_up
+
+lram+i charX r0
+lram+i screenLoc r1
+add r0 r1 r0 #world LocX
+add+i 25 r0 r0 #add width
+lram+i movX r2
+add r2 r0 r0 #add mov
+
+lram+i charY r1 #locY
+#add+i 31 r1 r1#add height
+push r1
+
+lram+i velY r2
+
+sub r1 r2 r1 #add velY to r1
+
+div+_i r0 32 r0 #get tileX
+div+_i r1 32 r1 #get tileY
+push r1
+jsr get_tile
+
+pull r0 #get tileY
+pull r1 #get corner charWorldX
+
+jne+i 1 r5 noColUpR
+	inc r0
+	mul+i 32 r0 r0 #tileWorldY
+	#dec r0
+	sub r0 r1 r2
+	neg r2 r2
+
+	mov r2 movY
+	mov+i 0 velY
+	mov+i 0 jumpHold
+
+	ret
+label noColUpR
+
+
+lram+i charX r0
+lram+i screenLoc r1
+add r0 r1 r0 #world LocX
+add+i 8 r0 r0 #add width
+lram+i movX r2
+add r2 r0 r0 #add mov
+
+lram+i charY r1 #locY
+#add+i 31 r1 r1#add height
+push r1
+
+lram+i velY r2
+
+sub r1 r2 r1 #add velY to r1
+
+div+_i r0 32 r0 #get tileX
+div+_i r1 32 r1 #get tileY
+push r1
+jsr get_tile
+
+pull r0 #get tileY
+pull r1 #get corner charWorldX
+
+jne+i 1 r5 noColUpL
+	inc r0
+	mul+i 32 r0 r0 #tileWorldY
+	#dec r0
+	sub r0 r1 r2
+	neg r2 r2
+
+	mov r2 movY
+	mov+i 0 velY
+	mov+i 0 jumpHold
+
+	ret
+label noColUpL
+
+ret
+
+# -------------------------------
+
+label col_right
+
+lram+i charX r0
+lram+i screenLoc r1
+add r0 r1 r0 #world LocX
+add+i 25 r0 r0 #add width
+push r0
+
+lram+i charY r1 #locY
+add+i 30 r1 r1#add height
+
+lram+i velX r2
+add r2 r0 r0 #add velX to r0
+
+div+_i r0 32 r0 #get tileX
+div+_i r1 32 r1 #get tileY
+push r0
+jsr get_tile
+pull r0 #get tileX
+pull r1 #get corner charWorldX
+
+jne+i 1 r5 noColRightD
+	mul+i 32 r0 r0 #tileWorldX
+	dec r0
+	sub r0 r1 r2
+	
+	mov r2 movX
+	mov+i 0 velX
+	ret
+label noColRightD
+
+lram+i charX r0
+lram+i screenLoc r1
+add r0 r1 r0 #world LocX
+add+i 25 r0 r0 #add width
+push r0
+
+lram+i charY r1 #locY
+#add+i 30 r1 r1#add height
+
+lram+i velX r2
+add r2 r0 r0 #add velX to r0
+
+div+_i r0 32 r0 #get tileX
+div+_i r1 32 r1 #get tileY
+push r0
+jsr get_tile
+pull r0 #get tileX
+pull r1 #get corner charWorldX
+
+jne+i 1 r5 noColRightU
+	mul+i 32 r0 r0 #tileWorldX
+	dec r0
+	sub r0 r1 r2
+	
+	mov r2 movX
+	mov+i 0 velX
+	ret
+label noColRightU
+	ret
+
+# -------------------------------
+
+label col_left
+
+lram+i charX r0
+lram+i screenLoc r1
+add r0 r1 r0 #world LocX
+add+i 8 r0 r0 #add width
+push r0
+
+lram+i charY r1 #locY
+add+i 30 r1 r1#add height
+
+lram+i velX r2
+add r2 r0 r0 #add velX to r0
+
+div+_i r0 32 r0 #get tileX
+div+_i r1 32 r1 #get tileY
+push r0
+jsr get_tile
+pull r0 #get tileX
+pull r1 #get corner charWorldX
+
+jne+i 1 r5 noColLeftD
+	inc r0
+	mul+i 32 r0 r0 #tileWorldX
+
+	sub r0 r1 r2
+	
+	mov r2 movX
+	mov+i 0 velX
+	ret
+label noColLeftD
+
+lram+i charX r0
+lram+i screenLoc r1
+add r0 r1 r0 #world LocX
+add+i 8 r0 r0 #add width
+push r0
+
+lram+i charY r1 #locY
+#add+i 30 r1 r1#add height
+
+lram+i velX r2
+add r2 r0 r0 #add velX to r0
+
+div+_i r0 32 r0 #get tileX
+div+_i r1 32 r1 #get tileY
+push r0
+jsr get_tile
+pull r0 #get tileX
+pull r1 #get corner charWorldX
+
+jne+i 1 r5 noColLeftU
+	inc r0
+	mul+i 32 r0 r0 #tileWorldX
+	sub r0 r1 r2
+	
+	mov r2 movX
+	mov+i 0 velX
+	ret
+label noColLeftU
+	ret
+
+# -------------------------------
+
+label landed
+lram+i onFloor r4
+je+i 1 r4 endLanded
+	# JUST LANDED
+	mov+i 0 velY
+	mov+i 1 onFloor
+	mov+i accelLenFloor accelLen
+	mov+i 0 accelTime
+	mov+i 0 jumpHoldTime
+label endLanded
+ret
+
+#=================================
+# PHYSICS
+#=================================
+label physics
+
+jsr pitDetection
+jsr detectCollisions
+jsr objColDetection
+
+#jsr benchEndWorst
+
+# -- vel X --
+mov+i accelTime r0
+mov+i accelLen r1
+
+jsr countdown
+je+i 0 r0 skipAccelX
+
+lram+i velX r1
+lram+i accelX r2
+
+add r2 r1 r1
+sng r1 r3 #r3 = VelX sign
+
+# -- r1 = abs(velX)
+je+i 0 r3 accelPos
+	neg r1 r1
+label accelPos
+
+jle+_i r1 topSpeed accelXContinue
+	#reached topspeed
+	mov+i topSpeed r1
+label accelXContinue
+
+je+i 0 r3 accelNotNeg
+	neg r1 r1 #if velX negative
+label accelNotNeg
+
+#store new velX
+mov r1 velX
+
+label skipAccelX
+
+#-- gravity --
+lram+i onFloor r4
+jne+i 1 r4 skipGravity
+	mov+i -1 velY
+label skipGravity
+lram+i charY r0
+lram+i movY r1
+sub r0 r1 r0
+mov r0 charY
+
+# --
+
+#-- add velX to charX or Screen
+
+lram+i movX r1
+lram+i charX r0
+lram+i screenLoc r2
+lram+i levelLength r3
+
+sng r1 r4
+je+i 1 r4 screenLeft
+	sub+_i r3 640 r4
+
+	jge r2 r4 moveChar
+	jg+_i r0 320 moveScreen
+	ja moveChar
+label screenLeft
+	je+_i r2 0 moveChar
+	jl+_i r0 320 moveScreen
+
+
+label moveChar
+	add r0 r1 r0
+	
+	sng r0 r4
+	je+i 0 r4 boundChar
+		mov+i 0 r0
+	label boundChar
+	jle+_i r0 608 boundChar2
+		mov+i 608 r0
+	label boundChar2
+	
+	mov r0 charX
+	
+	ja endMoveChar
+label moveScreen
+	lram+i screenLoc r0
+	add r0 r1 r0
+	
+	sng r0 r4
+	je+i 0 r4 boundSc
+		mov+i 0 r0
+	label boundSc
+	sub+_i r3 640 r4
+	jle r0 r4 boundSc2
+		mov r4 r0
+	label boundSc2
+	
+	mov r0 screenLoc
+	
+label endMoveChar
+
+ret
+
+#----------------------------------
+label updateObjGraphics
+
+je+_i objType 1 draw_walker
+je+_i objType 2 draw_jumper
+je+_i objType 3 draw_spiker
+je+_i objType 4 draw_police
+
+ret
+
+#----------------------------------
+label draw_sendToGpu
+
+mov+i 1 gpu_cmd
+mov+i objID gpu_id
+mov r0 gpu_pos
+mov+i 48*16b+32 gpu_size
+mov+i 0 gpu_draw
+
+#draw obj gfx
+sub objX screenLoc r0
+sub+_i r0 16 r0
+sub+_i objY 32 r1
+mul+i 16b r1 r1
+add r0 r1 r0
+
+mov+i_ 2 gpu_cmd
+mov+i_ objID gpu_id
+mov r0 gpu_pos
+mov+i_ 48*16b+32 gpu_size
+mov+i_ 0 gpu_draw
+
+ret
+
+#----------------------------------
+
+label draw_dying
+#r0 = gfx loc of creature 1st tile
+
+add+i 384*16b r0 r0
+inc objCnt
+jl+_i objCnt 20 objNotDeadYet
+	mov+i 1 objDead
+	mov+i 0 objDying
+	mov+i 0 objCnt
+label objNotDeadYet
+jl+_i objCnt 13 ob objNotFlash
+
+and+i 1 loopCount r1
+jg+_i r1 0 objNotFlash
+	mov+i 192*16b r0
+label objNotFlash
+
+ret
+
+#----------------------------------
+
+label draw_flip
+#r0 = gfx Location
+
+je+i 0 objSide skipObjFlip
+	add+i 64 r0 r0
+label skipObjFlip
+
+ret
+
+#---------------------------------
+label draw_walk
+
+je+i 1 objDying walkerIsDying
+	and+i 24 loopCount r1
+	div+_i r1 6 r1
+	mul+_i r1 64 r1
+	mul+_i r1 16b r1
+	add r1 r0 r0
+	ja walkerNotDying
+label walkerIsDying
+	jsr draw_dying
+label walkerNotDying
+
+jsr draw_flip
+jsr draw_sendToGpu
+
+ret
+
+#---------------------------------
+label draw_walker
+#Update gfx animation frame
+mov+i 736*16b+16 r0 #starting gfx
+
+jsr draw_walk
+
+ret
+
+#--------------------------------
+
+label draw_spiker
+
+mov+i 1632*16b+16 r0 #starting gfx
+
+jsr draw_walk
+
+ret
+
+#--------------------------------
+
+label draw_police
+
+mov+i 2080*16b+16 r0 #starting gfx
+
+je+i 1 objDying walkerIsDying
+	and+i 12 loopCount r1
+	div+_i r1 6 r1
+	mul+_i r1 64 r1
+	mul+_i r1 16b r1
+	add r1 r0 r0
+	ja walkerNotDying
+label walkerIsDying
+	jsr draw_dying
+label walkerNotDying
+
+je+i 0 objData notPoliceHit
+	mov+i 2464*16b+16 r0 #hurt frame
+label notPoliceHit
+
+jsr draw_flip
+jsr draw_sendToGpu
+
+ret
+
+#---------------------------------
+label draw_jumper
+#Update gfx animation frame
+mov+i 1184*16b+16 r0 #starting gfx
+
+
+je+i 1 objDying jumperIsDying
+
+	sng objVelY r1
+	je+i 1 objData jumperIdle
+	je+i 1 r1 jumperNotFalling
+		add+i 128*16b r0 r0
+		ja jumperFallingEnd
+	label jumperNotFalling
+		add+i 64*16b r0 r0
+		ja jumperFallingEnd
+	label jumperIdle
+		jg+_i objDataCnt 10 jumperFallingEnd
+			add+i 192*16b r0 r0
+	label jumperFallingEnd
+	
+
+	ja jumperNotDying
+label jumperIsDying
+	jsr draw_dying
+label jumperNotDying
+
+jsr draw_flip
+jsr draw_sendToGpu
+
+ret
+
+#---------------------------------
+label updateObjects
+#Update gfx position
+je+i 0 objDead notObjDead
+	mov+i -100 objY
+	ret
+label notObjDead
+
+je+_i objType 1 update_walker
+je+_i objType 2 update_jumper
+je+_i objType 3 update_spiker
+je+_i objType 4 update_police
+
+ret
+
+#---------------------------------
+
+label update_walker
+mov+i 1 objWalkSpeed
+jsr update_walk
+ret
+
+label update_spiker
+jsr update_walker
+ret
+
+label update_police
+
+je+i 1 objData policeHurt
+
+	mov+i 2 objWalkSpeed
+	jsr update_walk
+	ret
+label policeHurt
+	inc objDataCnt
+
+	jl+_i objDataCnt 30 policeStillHurt
+		mov+i 0 objData
+		mov+i 0 objDataCnt
+	label policeStillHurt
+
+ret
+
+#---------------------------------
+label update_walk
+
+je+i 1 objDying walkerMoveEnd
+and+i 0 loopCount r0
+je+i 1 r0 walkerMoveEnd
+je+i 1 objSide walkerMoveLeft
+	
+	add objWalkSpeed objX objX
+	#inc objX
+	jsr enemyDetectFloor
+	je+i 1 r0 walkerMoveEnd
+		mov+i 1 objSide
+		ja walkerMoveEnd
+label walkerMoveLeft
+	#dec objX
+	sub objX objWalkSpeed objX
+	sng objX r0
+	je+i 1 r0 enGoRigth
+	jsr enemyDetectFloor
+	je+i 1 r0 walkerMoveEnd
+		label enGoRigth
+		mov+i 0 objSide
+label walkerMoveEnd
+
+ret
+
+#---------------------------------
+label update_jumper
+
+je+i 1 objDying jumperMoveEnd
+
+add objVelY objY objY
+
+jg objY objStartY jumperOnFloor
+je+i 1 objData jumperOnFloor
+	
+	and+i 3 loopCount r0
+	jne+i 0 r0 jumperMoveEnd
+		inc objVelY
+	ja jumperMoveEnd
+label jumperOnFloor
+	mov objStartY objY #land on tile
+	je+i 1 objData jumperAlreadyOnFloor #were we in the air ?
+		mov+i 1 objData
+		mov+i 0 objDataCnt
+		mov+i 0 objVelY
+	label jumperAlreadyOnFloor
+	inc objDataCnt
+	jl+_i objDataCnt 20 jumperNotJump
+		#jump !
+		mov+i -6 objVelY
+		mov+i 0 objData
+	label jumperNotJump
+
+label jumperMoveEnd
+
+ret
+
+#---------------------------------
+label objColDetection
+
+je+i 1 objDying skipObjCol
+je+i 1 objDead skipObjCol
+
+add charX screenLoc r0
+add r0 movX r0
+
+je+i 0 punching noColDetectPunch
+
+	mov+i 10 r1
+
+	je+i 0 side noColPunchRight
+		mul+i -1 r1 r1
+	label noColPunchRight
+
+	add r0 r1 r0
+
+label noColDetectPunch
+
+sub charY movY r1
+
+add+i 16 r0 r0 #get middle X
+add+i 16 r1 r1 #get middle Y
+
+sub objX r0 r0 #get X diff
+sub objY r1 r1 #get Y diff
+
+abs r0 r3
+abs r1 r4
+
+mul r3 r3 r0 #pow2 X
+mul r4 r4 r1 #pow2 Y
+
+add r0 r1 r0 #add X/Y diffs
+
+jg+_i r0 450 skipObjCol
+	
+	add+_i charY 16 r0 #get char bottom Y
+	sub+_i objY 10 r1 #get top of obj
+
+	jg r0 r1 getHurt
+
+	#sng movY r0
+	#je+i 0 r0 getHurt
+
+	je+i 3 objType getHurt #if enemy is spiker, no stomp
+
+	label stomp
+		jsr startJump
+		mov+i 8 movY
+
+	label enemyGetHurt
+		mov+i 1 objDying
+
+		ja skipObjCol
+	label getHurt
+		jne+i 1 punching noPunched
+
+			
+
+			jne+i 4 objType notPolice#if police
+				mov+i 1 objData
+				mov+i -2 velX
+				je+i 0 side skipSidePolicePushback
+					mul+i -1 velX velX
+				label skipSidePolicePushback
+
+				ja skipObjCol
+			label notPolice
+				mov+i -1 velX
+				je+i 0 side skipSidePushback
+					mul+i -1 velX velX
+				label skipSidePushback
+
+				ja enemyGetHurt
+			label endPolice
+		label noPunched
+
+		pull r0
+		pull r0 #pull ret addr
+		ja died
+
+label skipObjCol
+ret
+
+#----------------------------------------------------
+
+#mov r2 display
+label died
+#assumes stack position is 0
+mov+i 1 gpu_cmd
+mov+i 32*16b+32 gpu_size
+	
+mov+i 128*16b gpu_pos
+mov+i charID gpu_id
+mov+i 0 gpu_draw
+
+	
+jsr hideLevel
+ja startEndGameLoop
+
+ret
+
+label enemyDetectFloor
+
+div+_i objX 32 r0
+div+_i objY 32 r1
+
+add+i 1 r1 r1
+
+jsr get_tile
+
+je+i 0 r5 noEnFloor
+	mov+i 1 r0
+	ret
+label noEnFloor
+	mov+i 0 r0
+	ret
+
+#---------------------------------
+label pitDetection
+
+lram+i charY r1
+div+_i r1 32 r1 #get charTileY
+
+jg+_i r1 14 fellInPit #if below map, die
+	ret
+label fellInPit
+
+mov+i 0 velX
+mov+i 0 velY
+mov+i 480-31 charY
+mov+i 1 dead
+
+ret
+
+#--------------------------------
+jsr get_tile #r5 = tileType
+
+je+i 0 r5 endFloorDetect
+	mov+i 1 r5
+	ret
+label endFloorDetect
+	mov+i 0 r5
+	ret
+#---------------------------------
+
+label get_tile
+#r0 tileX
+#r1 tileY
+#return tile type in r5
+
+lram+i levelLengthTile r5
+mul r1 r5 r5 #tileY * width
+add r0 r5 r5 #add tileX
+add+i tiles r5 r5
+
+lram r5 r5
+
+ret
+#---------------------------------
+label state
+je+i 1 winPose state_win
+je+i 0 anim state_idle
+je+i 1 anim state_walking
+je+i 2 anim state_air
+je+i 3 anim state_punch
+
+ret
+
+label state_win
+
+mov+i 1 frameLen
+mov+i 1 frameCount
+mov+i 5 framePosX
+mov+i 2 framePosY
+mov+i 0 frame
+
+jsr animate
+ret
+
+label state_idle
+mov+i 16 frameLen
+mov+i 4 frameCount
+mov+i 0 framePosX
+mov+i 0 framePosY
+
+jsr state_blinking
+jsr animate
+ret
+
+label state_blinking
+
+jne+i 2 frame skipNoBlink
+jne+_i frameTime 0 skipNoBlink 
+	jne+i 0 blink skipBlink
+	#new frame
+		mov+i 2 blink
+		mov+i 6 frameTime
+		mov+i 3 frame
+		ja skipNoBlink
+	label skipBlink
+		dec blink
+		mov frameLen frameTime
+		mov+i 0 frame
+label skipNoBlink
+ret
+
+label state_walking
+
+#lram+i velX r0
+abs velX r0
+add+ii topSpeed topRunAnimTime r1
+sub r1 r0 r0 
+
+mov r0 frameLen
+mov+i 6 frameCount
+mov+i 0 framePosX
+mov+i 1 framePosY
+
+jsr animate
+ret
+
+label state_air
+
+mov+i 1 frameLen
+mov+i 1 frameCount
+mov+i 2 framePosY
+
+sng velY r0
+je+i 0 r0 setRiseAnim
+	mov+i 1 framePosX
+	ja endJumpAnim
+label setRiseAnim
+	mov+i 0 framePosX
+label endJumpAnim
+
+jsr animate
+ret
+
+label state_punch
+mov+i 8 frameLen
+mov+i 2 frameCount
+mov+i 4 framePosY
+mov+i 0 framePosX
+
+je+i 0 punchSide noPunchHook
+	mov+i 2 framePosX
+label noPunchHook
+
+
+jsr animate
+ret
+
+label animate
+
+jne+_i frameTime 0 skipFrame#frameTime > 0 ?
+	inc frame
+	jl frame frameCount skipReset
+		mov+i 0 frame
+	label skipReset
+	
+	mov frameLen frameTime #new frameTime
+label skipFrame
+
+dec frameTime
+
+#--- Update Graphics ---
+
+#Set X
+add framePosX frame r1
+mul+i 16b r1 r1
+mul animWidth r1 r1
+
+#Set Y
+mul+i 32 framePosY r2
+add r2 r1 r1
+
+#Set Side
+jne+i 1 side faceRight
+	add+i 8*32*16b r1 r1
+label faceRight
+
+#Set Size
+mov+i 32*16b r2
+add animWidth r2 r2
+
+je+i 0 animWidthChanged noHideGfx
+	#remove gfx while updating
+	#because we change width
+	mov+i 0 animWidthChanged
+
+	mov+i 2 gpu_cmd
+	mov+i charID gpu_id
+	mov+i -100 gpu_pos
+	mov+i 0 gpu_draw
+label noHideGfx
+
+#Send Graphics to GPU
+mov+i_ 1 gpu_cmd
+mov+i_ charID gpu_id
+mov+__ r1 gpu_pos
+mov r2 gpu_size
+mov+i_ 0 gpu_draw
+
+#--- Update Location ---
+
+mul+i 16b charY r2
+add charX r2 r0 #merge with posY
+
+jne+i 64 animWidth notWideGfx
+	add+i -16 r0 r0
+label notWideGfx
+
+#Send Location to GPU
+mov+i 2 gpu_cmd
+mov+i charID gpu_id
+mov r0 gpu_pos
+mov+i 0 gpu_draw
+
+ret
+
+label countdown
+#.................................
+# r0 = counterTimeAddr
+# r1 = counterLenAddr
+# return r0 = 0/1
+#.................................
+
+lram r0 r2 #load counterTime
+lram r1 r3 #load counterLen
+
+je+i 0 r2 count_done
+	dec r2
+	sram r0 r2 #count down
+	mov+i 0 r0
+	ret
+label count_done
+sram r0 r3 #reset timer
+mov+i 1 r0
+ret
+
+#------ Load Tile -----------------
+
+label loadTile
+#r0 = tileX
+#r1 = tileY
+#r2 = tileType
+
+jg+_i r2 3 loadObj #go to loadObj instead if not a tile type
+
+# -- r5 = destAddrFirstTile --
+mul r1 levelLengthTile r5 #tileY * width
+add r0 r5 r5 #add tileX
+add+i tiles r5 r5 #add tileAddr
+
+#mul r1 levelLengthTile r1 #tileY * width
+#add r0 r1 r1 #add tileX
+#add r5 r1 r1 #add ram addr
+sram r5 r2 #write tile type
+
+ret
+
+#------ Load Obj -----------------
+label loadObj
+#r0 = tileX
+#r1 = tileY
+#r2 = tileType
+
+#get obj type
+sub+_i r2 49 r2 #transform tile type into obj type
+and+i 1 r2 r4 #get first bit to get side
+#xor+i 1 r3 r4 #invert first bit keep in r4
+div+_i r2 2 r2 #put real type in r2
+add+_i r2 1 r2 #add 1 cause theres no enemy nb 0
+
+#mov r2 display 
+
+#write obj reference
+add+i objRef r0 r3
+sram r3 curRefObj #write obj ref
+inc curRefObj
+
+#write obj data
+mov curLoadObj r3
+
+mul+i 32 r0 r0 #get tileLoc X
+add+i 16 r0 r0
+mul+i 32 r1 r1 #get tileLoc Y
+add+i 16 r1 r1
+
+sram r3 r0 #write TileLoc X
+inc r3
+sram r3 r1 #write TileLoc Y
+inc r3
+sram r3 r4 #write side
+inc r3
+sram r3 r2 #write type
+inc r3
+
+mov r3 curLoadObj
+
+ret
+
+#------ Benchmark ---------------
+
+label benchStart
+mov counter debug
+ret
+
+label benchEnd
+#lram+i debug r1
+sub counter debug display
+ret
+
+label benchEndWorst
+lram+i debug r1
+sub counter debug r0
+jl r0 debugWorst skipWorstEnd
+	mov r0 debugWorst
+	mov r0 r1
+label skipWorstEnd
+
+mov r1 display
+ret
+
+#----- Wait ---------------
+label wait
+
+lram+i maxFrameTicks r1
+
+jle counter r1 averageDisplay
+	mov counter maxFrameTicks
+	je+ii 0 showMaxTicks averageDisplay
+		mov counter display
+label averageDisplay
+inc avgFrame
+jl+_i avgFrame 59 skipAvgShow
+	mov+i 1 avgFrame
+	#mov avgTicks display
+	mov counter avgTicks
+	ja endAvg
+label skipAvgShow
+	jl counter avgTicks endAvg
+		mov counter avgTicks
+	
+	
+label endAvg
+
+	
+label waitLoop
+	jl+_i counter waitTime waitLoop
+	mov+i 0 counter
+ret
+
+label resetGPU
+mov+i 0 r0
+label resetGPUloop
+mov+i_ 1 gpu_cmd
+mov r0 gpu_id
+mov+i_ 0 gpu_pos
+mov+i_ 0 gpu_size
+mov+i_ 0 gpu_draw
+
+inc r0
+
+jl+_i r0 32 resetGPUloop
+
+ret
+
+label loadLevel
+# -- calculate width in tiles --
+lram+i levelLength r5 
+div+_i r5 32 r5
+mov r5 levelLengthTile
+# --
+
+mov+i objects curLoadObj
+mov+i 1 curRefObj
+
+#-- one line for whole level
+#mov+i 59 r0 mov+i 0 r1 mov+i 3 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 59 r0 mov+i 1 r1 mov+i 3 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 59 r0 mov+i 2 r1 mov+i 3 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 59 r0 mov+i 3 r1 mov+i 3 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 59 r0 mov+i 4 r1 mov+i 3 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 59 r0 mov+i 5 r1 mov+i 3 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 59 r0 mov+i 6 r1 mov+i 3 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 59 r0 mov+i 7 r1 mov+i 3 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 59 r0 mov+i 8 r1 mov+i 3 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 59 r0 mov+i 9 r1 mov+i 3 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 13 r0 mov+i 10 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 24 r0 mov+i 10 r1 mov+i 2 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 25 r0 mov+i 10 r1 mov+i 2 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 26 r0 mov+i 10 r1 mov+i 2 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 27 r0 mov+i 10 r1 mov+i 2 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 59 r0 mov+i 10 r1 mov+i 3 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 0 r0 mov+i 11 r1 mov+i 2 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 1 r0 mov+i 11 r1 mov+i 2 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 2 r0 mov+i 11 r1 mov+i 2 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 9 r0 mov+i 11 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 13 r0 mov+i 11 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 17 r0 mov+i 11 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 59 r0 mov+i 11 r1 mov+i 3 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 3 r0 mov+i 12 r1 mov+i 2 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 8 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 9 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 12 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 13 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 14 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 19 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 20 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 21 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 22 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 23 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 24 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 25 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 26 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 27 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 28 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 29 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 30 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 31 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 32 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 33 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 34 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 35 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 36 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 37 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 38 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 39 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 40 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 41 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 42 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 43 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 44 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 45 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 46 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 47 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 48 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 49 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 50 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 51 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 52 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 53 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 54 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 55 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 56 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 57 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 58 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 59 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 60 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 61 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 62 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 63 r0 mov+i 12 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 6 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 7 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 8 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 9 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 12 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 13 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 14 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 15 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 19 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 20 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 21 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 22 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 23 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 24 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 25 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 26 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 27 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 28 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 29 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 30 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 31 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 32 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 33 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 34 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 35 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 36 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 37 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 38 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 39 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 40 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 41 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 42 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 43 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 44 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 45 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 46 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 47 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 48 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 49 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 50 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 51 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 52 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 53 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 54 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 55 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 56 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 57 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 58 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 59 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 60 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 61 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 62 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 63 r0 mov+i 13 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 0 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 1 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 2 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 3 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 4 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 5 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 6 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 7 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 8 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 9 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 12 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 13 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 14 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 15 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 16 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 17 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 18 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 19 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 20 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 21 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 22 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 23 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 24 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 25 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 26 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 27 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 28 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 29 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 30 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 31 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 32 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 33 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 34 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 35 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 36 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 37 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 38 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 39 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 40 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 41 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 42 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 43 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 44 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 45 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 46 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 47 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 48 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 49 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 50 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 51 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 52 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 53 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 54 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 55 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 56 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 57 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 58 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 59 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 60 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 61 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 62 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles mov+i 63 r0 mov+i 14 r1 mov+i 1 r2 mov+i 1 r3 mov+i 1 r4 jsr loadTiles 
+# --
+
+mov+i 0 r6 #iterator
+
+label loadFromRom
+
+lrom r6 r0 #get X
+inc r6
+lrom r6 r1 #get Y
+inc r6
+lrom r6 r2 #get Type
+inc r6
+
+je+i 0 r2 endLoadLevel #no more tiles
+
+jsr loadTile
+ja loadFromRom
+
+label endLoadLevel
+
+mov+i 0 counter
+
+ret

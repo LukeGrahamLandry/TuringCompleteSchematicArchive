@@ -1,0 +1,48 @@
+const r_i 0
+
+label asd
+put ram 0x515AF30F
+add_d regram 2
+put ram 0x515AF32E
+add_d regram 2
+put ram 0x515AF32E
+add_d regram 2
+put ram 0x515AF32E
+add_d regram 2
+put ram 0x515AF32E
+add_d regram 2
+put ram 0x515AF32E
+add_d regram 1
+put ram 0x515AF30F
+
+inc r_i _
+add_d regram 69
+cmp_d r_i 11
+je end _
+jmp asd
+label end
+
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+add_d regram 1
+put ram 0x515AF30F
+

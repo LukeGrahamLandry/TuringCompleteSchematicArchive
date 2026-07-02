@@ -1,0 +1,158 @@
+#___GENERAL RULES FOR COMMANDS___
+
+#OPCODE  INPUT1  INPUT2  SAVE-LOCATION
+
+#The OPCODE determines what operation the program will execute
+#INPUT1 and INPUT2 are inputs to the operation being performed
+#The SAVE-LOCTATION is quite self-explanatory, it determines where the input is saved 
+
+#ri, where i is the index of the register, refers to a register, for example r1 would refer to register 1
+#There are 16 registers (r0-r15)
+
+#COMMAND+im1 means the first input will not be a register but rather the input itself
+#COMMAND+im2 means the second input will not be a register but rather the input itself
+#COMMAND+imb means both the first and second input will not be a register but rather the input itself
+
+#The SAVE-LOCATION is usually a register but can sometimes mean something else, for example a third input
+
+#___COMMANDS___
+
+#IMPORTANT:
+#in = input, str = store-location, jmpl = jump-location, ___ = the value doesn't affect the operation/result
+
+#-INTEGER ALU-
+
+#add in1 in2 str - returns in1 + in2
+#sub in1 in2 str - returns in1 - in2
+#mul in1 in2 str - returns in1 * in2
+#div in1 in2 str - returns in1 / in2
+#mod in1 in2 str - returns in1 % in2
+
+#-BITWISE OPERATIONS-
+
+#and in1 in2 str - returns in1 & in2
+#nand in1 in2 str - returns !(in1 & in2)
+#or in1 in2 str - returns in1 | in2
+#nor in1 in2 str - returns !(in1 | in2)
+#xor in1 in2 str - returns in1 ^ in2
+#xnor in1 in2 str - returns !(in1 ^ in2)
+
+#not in1 ___ str - returns ~in1
+#neg in1 ___ str - returns -in1
+
+#shl in1 in2 str - returns in1 << in2
+#shr in1 in2 str - returns in1 >> in2
+#ashr in1 in2 str - returns in1 >> in2 while maintaining the sign
+#rol in1 in2 str - rotates the bits to the left
+#ror in1 in2 str - rotates the bits to the right
+
+#-DOUBLE ALU-
+
+#Doubles are stored differently than integers
+#It's like scientific notation but for binary so instead of 10^a it's 2^a
+#3.5 would for example be 1.75 * 2^1
+#This computer uses 64-bit values and operations. Therefore it uses the bits as follows to represent double values:
+
+# 1 bit      11 bits                              52 bits                  
+#   _      ___________      ____________________________________________________
+# SIGN      EXPONENT                             MANTISSA                        
+
+#The exponent's "real" value is 1023 minus the value of the exponent
+#The mantissa is stored like a fraction with a hidden one that's always on
+
+#So 3 would be 1.5 * 2^1 = 0(the sign is positive) 10000000000(1 is the "real exponent" but we need to add 1023 to get the binary exponent and then we get 1+1023=1024) (1.5 in the decimal system = 1.1 in the binary system but becuase the one is hidden we get 0.100000...) 1000000000000000000000000000000000000000000000000000 
+
+
+
+#addd in1 in2 str - returns in1 + in2 (where in1 and in2 are doubles)
+#subd in1 in2 str - returns in1 - in2 (where in1 and in2 are doubles)
+#muld in1 in2 str - returns in1 * in2 (where in1 and in2 are doubles)
+#divd in1 in2 str - returns in1 / in2 (where in1 and in2 are doubles)
+
+#-CONDITIONALS-#
+
+#When doing conditionals the result doesnt get stored but rather determines if the program should jump to a line or not
+#Conditionals don't return values but rather true or false
+
+#jmp ___ ___ jmpl - always jumps
+#eq in1 in2 jmpl - jumps if in1 == in2
+#neq in1 in2 jmpl - jumps if in1 != in2
+#l in1 in2 jmpl - jumps if in1 < in2 (SIGNED)
+#le in1 in2 jmpl - jumps if in1 <= in2 (SIGNED)
+#b in1 in2 jmpl - jumps if in1 > in2 (SIGNED)
+#be in1 in2 jmpl - jumps if in1 >= in2 (SIGNED)
+#ul in1 in2 jmpl - jumps if in1 < in2 (UNSIGNED)
+#ule in1 in2 jmpl - jumps if in1 <= in2 (UNSIGNED)
+#ub in1 in2 jmpl - jumps if in1 > in2 (UNSIGNED)
+#ube in1 in2 jmpl - jumps if in1 >= in2 (UNSIGNED)
+
+#-DOUBLE CONDITIONALS-
+#Double conditionals works exactly like regular conditionals but it uses doubles instead of integers
+#If you want to know how doubles work scroll upwards and read "#-DOUBLE ALU-", where doubles structure are explained
+#Since doubles have a sign, all double conditionals are signed
+
+#eqd in1 in2 jmpl - jumps if in1 == in2 (where in1 and in2 are doubles)
+#neqd in1 in2 jmpl - jumps if in1 != in2 (where in1 and in2 are doubles)
+#ld in1 in2 jmpl - jumps if in1 < in2 (where in1 and in2 are doubles)
+#led in1 in2 jmpl - jumps if in1 <= in2 (where in1 and in2 are doubles)
+#bd in1 in2 jmpl - jumps if in1 > in2 (where in1 and in2 are doubles)
+#bed in1 in2 jmpl - jumps if in1 >= in2 (where in1 and in2 are doubles)
+
+#-CALL/RET-#
+#Like with conditionals the result doesnt get stored but rather determines if the program should jump to a line or not
+#call is used to call a function
+#ret is used to return from a function
+#This can be used so that a part of code can be exectued from different places and multiple times without having to copy paste
+
+#call ___ ___ jmpl - calls a function at line jmpl
+#ret ___ ___ ___ - return from a function
+
+#-STACK-#
+#The stack is used to access memory like stacking plates. You add something to memory at the top but can only retrieve it from the top
+#So you can not add value a then add value b and retrieve value a without first retriving value b
+
+#push in1 ___ ___ - pushes the in1 onto the stack
+#pop ___ ___ str - retrieves the value at the top of the stack
+
+#-KEYBOARD-#
+#The way the keyboard is set up there will be problems if the person interacting with thge keyboard presses two keys at once
+#There is a keystack that holds the eight last pressed keys
+
+#keystack ___ ___ str - pops a key in the key stack
+#prsdkeys in1 ___ str - returns one if the key with index in1 is pressed
+
+#-RAM-#
+
+#sram in1 in2 ___ - stores in1 in RAM at adress in2
+#lram ___ in2 str - retrieves the value located at adress in2 in RAM
+
+#-CONSOLE-#
+#The console is in color mode
+#The first byte is the character (in ASCII) and the 6 bytes after that is color (the 2-4 bytes are the foreground in RGB where each color corresponds to a color in the order RED, GREEN BLUE and the 5-7 bytes are the background in RGB where each color corresponds to a color in the order RED, GREEN BLUE) and the last byte isnt used
+
+#scons in1 in2 ___ - sets the character at position in2 to in1
+#lcons ___ in2 str - loads the input at adress in2 and stores it in str (use this command when you for example want user input in the console)
+#offcons in1 ___ ___ - sets the offset to in1
+
+#-BIT FUNCTIONS-#
+#Bit functions are functions that operate on bits
+#OBS! bp (bitposition) ONLY works when there is one bit on
+
+#bp in1 --- str - returns the bitposition of the bit in in1
+#rvr in1 --- str - returns in1 but with the bits reversed (the first bit becomes the 64th bit, the 2 bit the 63:d bit and so on and so on)
+#hb in1 --- str - returns the highest bit in in1
+#lb in1 --- str - returns the lowest bit in in1
+
+#-MATRIX DISPLAY-#
+#The matrix display is a screen with size 144 x 192 (width of 192, height of 144)
+#It contains "mini" screens, which can only be accessed one at a time 
+#The "mini" screens are accessed by row(0-23) and column(0-23) and the bits in bytes 2-7 of the second input choose if each pixel should be on or off (the bits go from the top right to the bottom left, so if the first bit in the second byte is on you get a pixel in the top right of the "mini" screen)
+#OBS! To update a "mini" screen you need to set the second inputs last byte to 255 AND to even SAVE to the screen you NEED to have the first bit on in both the first AND second input.
+
+#mtr in1 in2 ___ - sets which pixels of a given "mini" screen that should be on. The 2-4 byte of in1 chooses the color of the pixels, the 5th byte chooses the row that the "mini" screen is located at(zero to eleven) and the 6th bit chooses the column that the "mini" screen is located at (zero to eleven) AND the first bit of the whole number needs to be on for the display to save it. in2 chooses which pixels should be on by looking at the bits from byte 2-7 (where each bit is one pixel, either being 1 or 0 (on or off)) and updates the display only if all the bits in the last byte is on (the last byte should be 255 and the first bit of the whole number should be on)
+
+#-FILE LOADER-#
+#The file loader can load bytes from the selected file in the file component (8 bytes at a time)
+#To get the size of the file, set the offset to -1 (0xFFFFFFFFFFFFFFFF)
+
+#fld in1 ___ str - returns the 8 bytes in the file component at offset in1

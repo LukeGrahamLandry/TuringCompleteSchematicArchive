@@ -1,0 +1,4 @@
+"println(\"Hello, World!\");"
+"print(\"Another line... \");"
+"print(\"\");"
+"println(\"and this is the same line!\");"

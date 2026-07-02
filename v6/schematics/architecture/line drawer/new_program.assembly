@@ -1,0 +1,16 @@
+#IMPORTANT:
+#min X:0
+#max X:240
+
+#min Y:0
+#max Y:72
+
+#idk what other values outside that
+#range will do, i havent tried it
+
+#put each line as 2 points
+#EX:
+
+#makes an x symbol
+240 72 0 0
+240 0 0 72

@@ -1,0 +1,1594 @@
+#This is a 3D engine in Turing Complete
+#To start, click the "Run Faster"-button (>>) to the left and then close this window and look at the big gray screen (It may take a while before you see anything) 
+#Please go to "INFO" at the top for info on how this works
+#Also please go to info for info about how to change models and object properties
+
+#___CONSTANTS___ (DO NOT CHANGE)
+const color_b 256
+const color_g 65536
+const color_r 16777216
+
+const sign_bit -9223372036854775808
+const minus -9223372036854775808
+
+#-Screen- (You can change this if you want to, but the width cannot be bigger than 192 and the height cannot be bigger than 144
+#Uses integers(regular numbers), and not doubles
+const width 192
+const height 144
+
+#-View settings- (You can change these if you want to)
+#z_far is how far away your model can be for it to be rendered and z_near is how close a model can be for it to be rendered.
+#Uses doubles
+const z_far double_1000
+const z_near double_0_point_1
+
+#___NUMBERS___
+
+#-Double values- (DO NOT CHANGE OR DELETE, but add how many values you want(you can change or delete the ones you add yourself))
+const double_half 4602678819172646912
+const negative_double_half -4620693217682128896
+const double_quarter 4598175219545276416
+const negative_double_1 -4616189618054758400
+const double_0 0
+const double_1 4607182418800017408
+const double_2 4611686018427387904
+const double_3 0x4008000000000000
+const double_4 4616189618054758400
+const double_5 0x4014000000000000
+const double_6 0x4018000000000000
+const double_7 0x401C000000000000
+const double_8 0x4020000000000000
+const double_9 0x4022000000000000
+const double_1_div_6 4595172819793696085 #Used for trigonometric function approximation
+const double_1_div_120 4575957461383581969 #Used for trigonometric function approximation
+const double_1000 0x408F400000000000
+const double_100 4636737291354636288
+const double_10 0x4024000000000000
+const double_12 0x4028000000000000
+const double_14 0x402C000000000000
+const double_15 0x402E000000000000
+const double_16 0x4030000000000000
+const double_18 0x4032000000000000
+const double_20 0x4034000000000000
+const double_25 0x4039000000000000
+const double_30 0x403E000000000000
+const double_35 0x4041800000000000
+const double_40 0x4044000000000000
+const double_45 0x4046800000000000
+const double_50 0x4049000000000000
+const double_60 0x404E000000000000
+const double_70 0x4051800000000000
+const double_80 0x4054000000000000
+const double_90 0x4056800000000000
+const double_0_point_1 0x3FB999999999999A
+const double_0_point_2 0x3FC999999999999A
+const double_0_point_3 0x3FD3333333333333
+const double_0_point_4 0x3FD999999999999A
+const double_0_point_5 0x3FE0000000000000
+const double_0_point_6 0x3FE3333333333333
+const double_0_point_7 0x3FE6666666666666
+const double_0_point_8 0x3FE999999999999A
+const double_0_point_9 0x3FECCCCCCCCCCCCD
+
+#-Angles- (DO NOT CHANGE OR DELETE, but add how many values you want(you can change or delete the ones you add yourself))
+const pi 4614256656552045848
+const negative_pi -4609115380302729960
+const pi_div_2 4609753056924675352
+const pi_div_4 4605249457297304856
+const negative_pi_div_2 -4613618979930100456
+const tau 4618760256179416344 #(2*pi)
+
+#Angles in degrees (DO NOT CHANGE OR DELETE, but add how many values you want(you can change or delete the ones you add yourself))
+const 360_degrees 4618760256179416344
+const 345_degrees 0x401815E630CBFAC0
+const 330_degrees 0x401709D10D235418
+const 315_degrees 0x4015FDBBE97AAD70 
+const 300_degrees 0x4014F1A6C67DD340
+const 285_degrees 0x4013E591A2D52C98 
+const 270_degrees 0x4012D97C7F2C85F0
+const 255_degrees 0x4011CD675B83DF48
+const 240_degrees 0x4010C15237DB38A0
+const 225_degrees 0x400F6A7A29BCBCDF
+const 210_degrees 0x400D524FE26B6F90
+const 195_degrees 0x400B3A259B1A2240
+const 180_degrees 4614256656552045848 
+const 165_degrees 0x400709D10DCF208F
+const 150_degrees 0x4004F1A6C67DD340
+const 135_degrees 0x4002D97C7F2C85F0
+const 120_degrees 0x4000C15237DB38A0
+const 105_degrees 0x3FFD524FE113D6A2
+const 90_degrees 4609753056924675352
+const 75_degrees 0x3FF4F1A6C67DD340
+const 60_degrees 0x3FF0C154C985F06F
+const 45_degrees 4605249457297304856
+const 30_degrees 0x3FE0C1523864A900 
+const 15_degrees 0x3FD0C1523864A900 
+const 00_degrees 0
+const temp 0x400945B9E20E7D71 
+
+#___PARAMETERS___
+
+#You can change these paramaters to whatever you want
+#If you for example want to make your object to be 10 length units in front of you, set pos_z to double_10
+
+#Uses doubles
+const fov 60_degrees #Field of view
+
+#-Scale-
+#Uses doubles
+const scale_x double_1
+const scale_y double_1
+const scale_z double_1
+
+
+#-Rotation-
+#Angles are a bit special, so please go to INFO at the top of this screen and then scroll down to "--How to change rotation--" 
+#Uses angles(they are doubles, but a little bit special. For more into please follow the comment above)
+
+const rot_x 30_degrees
+const rot_y 30_degrees
+const rot_z 30_degrees
+
+#-Position-
+#Uses doubles
+const pos_x double_0
+const pos_z double_3
+const pos_y double_0
+
+
+#___Variables___ (DO NOT CHANGE*)
+#*You can change them, but if you do it wrong it might make the program stop working. The thing you can change here is the triangle_array, since that detemines the number of vertices you can render.
+
+#The const are the position in RAM
+#Uses integers
+
+const camera_position_vector 0
+const camera_yaw 3 #Left/right rotation
+const camera_pitch 4 #Up/down rotation
+const aspect_ratio 5
+const scale_matrix 6
+const rotation_matrix 24
+const translation_matrix 40
+const model_matrix 56
+const view_matrix 72
+const projection_matrix 98
+const temporary_matrix 114
+const current_vertex_vector 130
+const temporary_vector 134
+const forward_vector 138 #The size here is 3, because these are directions, not positions
+const up_vector 141 
+const right_vector 144
+const world_up 147 #cosntant
+const save_vector 150
+const num_of_triangles 154
+const vertices_array 155
+const triangle_array 16384
+
+#___ASCII___ (DO NOT CHANGE)
+
+#For reading object files
+
+const new_line 10
+const hashtag 35
+const space 32
+const slash 47
+const point 46
+const minus_sign 45
+const ascii_0 48
+const ascii_v 118
+const ascii_f 102
+const ascii_s 115
+const ascii_o 111
+
+fld+im1 -1 0 r1
+eq+im2 r1 0 no_file_selected
+call 0 0 load_model
+jmp 0 0 start
+label no_file_selected
+jmp 0 0 stop
+
+label start
+sram+imb double_1 world_up+1 0 #Sets world_up to (0, 1, 0)
+mov+im1 width 0 r1
+call 0 0 int_to_double
+mov r1 0 r2
+mov+im1 height 0 r1
+call 0 0 int_to_double
+divd r2 r1 r1 #Aspect ratio (width / height)
+sram+im2 r1 aspect_ratio 0
+
+mov+im1 color_r*200+color_g*200 0 r4
+call 0 0 draw_frame
+
+label stop
+jmp 0 0 stop
+
+label draw_line 
+#r1 is x1
+#r2 is y1
+#r3 is color
+#r4 is x2
+#r5 is y2
+
+push r1 0 0
+push r2 0 0 
+push r3 0 0 
+push r4 0 0
+push r5 0 0
+push r6 0 0
+push r7 0 0 
+push r8 0 0 
+push r9 0 0
+push r10 0 0
+push r11 0 0
+push r12 0 0 
+push r13 0 0 
+push r14 0 0
+push r15 0 0
+
+mov r1 0 r1
+mov r2 0 r2
+mov r4 0 r4
+mov r5 0 r5
+
+subd r4 r1 r6 #deltaX (r6)
+subd r5 r2 r7 #deltaY (r7)
+
+not+im1 -9223372036854775808 0 r10
+and r6 r10 r9 #|deltaX| (r6)
+and r7 r10 r10 #|deltaY| (r7)
+
+led r9 r10 deltaY_to_steps
+mov r9 0 r8 #steps (r8)
+jmp 0 0 step_calculated
+label deltaY_to_steps
+mov r10 0 r8 #steps (r8)
+label step_calculated
+push r1 0 0
+divd r6 r8 r6
+divd r7 r8 r7
+#r6 and r7 is now x and y increase respectivly
+mov r8 0 r1
+call 0 0 round
+mov r1 0 r8
+pop 0 0 r1
+#r8 is now an int
+
+l+im2 r8 0 draw_line_done
+
+label draw_line_loop
+push r2 0 0
+push r1 0 0
+push r1 0 0
+mov r2 0 r1
+call 0 0 round
+mov r1 0 r2
+pop 0 0 r1
+call 0 0 round
+call 0 0 print_pixel
+pop 0 0 r1
+pop 0 0 r2
+addd r1 r6 r1
+addd r2 r7 r2
+
+sub+im2 r8 1 r8
+
+be+im2 r8 0 draw_line_loop
+
+label draw_line_done
+pop 0 0 r15
+pop 0 0 r14
+pop 0 0 r13
+pop 0 0 r12
+pop 0 0 r11
+pop 0 0 r10
+pop 0 0 r9
+pop 0 0 r8
+pop 0 0 r7
+pop 0 0 r6
+pop 0 0 r5
+pop 0 0 r4
+pop 0 0 r3
+pop 0 0 r2
+pop 0 0 r1
+
+ret 0 0 0
+
+label print_pixel
+push r1 0 0
+push r2 0 0
+push r3 0 0
+push r4 0 0
+push r5 0 0
+push r6 0 0
+push r7 0 0
+push r8 0 0
+
+div+im2 r1 8 r4 #Divide with matrix display width to get column
+div+im2 r2 6 r5 #Divide with matrix display width to get row
+div+imb width 8 r6
+sub+im2 r6 1 r6
+sub r6 r4 r4 #The matrix display is inverted on the x, going from right to left, not left to right
+
+shl+im2 r4 40 r7 #Set to column
+shl+im2 r5 32 r8 #Set to row
+or r7 r8 r6 #Store row and column for in1
+or r6 r3 r6 #Row, column and color, exactly what we want for input 1
+or+im2 r6 1 r6
+
+mod+im2 r1 8 r1
+mod+im2 r2 6 r2
+sub+im1 7 r1 r1
+mul+im2 r2 8 r2
+add r2 r1 r1
+add+im2 r1 8 r3 #Skip first byte
+shl+im1 1 r3 r3
+
+or+im2 r3 -72057594037927935 r3
+
+mtr r6 r3 0
+
+pop 0 0 r8
+pop 0 0 r7
+pop 0 0 r6
+pop 0 0 r5
+pop 0 0 r4
+pop 0 0 r3
+pop 0 0 r2
+pop 0 0 r1
+
+ret 0 0 0
+
+label double_to_int
+#r1 is the input and output
+push r2 0 0 
+push r3 0 0
+and+im2 r1 -9223372036854775808 r3
+and+im2 r1 9218868437227405312 r2 #Exponent
+and+im2 r1 4503599627370495 r1 #Mantissa
+xor+im2 r1 4503599627370496 r1 #Leading zero
+shr+im2 r2 52 r2 #Exponent but in int
+sub+im2 r2 1023 r2 #Subs 1023 (bias)
+be+im2 r2 0 no_shift_right
+mov+im1 0 0 r1
+jmp 0 0 double_to_int_done
+
+label no_shift_right
+b+im2 r2 52 no_shift_right_2
+sub+im1 52 r2 r2
+shr r1 r2 r1 
+jmp 0 0 double_to_int_done
+label no_shift_right_2
+shl r1 r2 r1 
+label double_to_int_done
+neq+im2 r3 -9223372036854775808 double_to_int_complete
+neg r1 0 r1
+label double_to_int_complete
+pop 0 0 r3
+pop 0 0 r2
+ret 0 0 0
+
+label int_to_double
+neq+im2 r1 0 not_zero
+ret 0 0 0
+label not_zero
+#r1 is the input and output
+push r2 0 0
+push r3 0 0
+push r4 0 0
+push r5 0 0
+
+and+im2 r1 -9223372036854775808 r4
+eq+im2 r4 0 done_negating
+neg r1 0 r1
+label done_negating
+
+hb r1 0 r2
+bp r2 0 r2
+shl+im1 1 r2 r5
+shr+im2 r5 1 r5
+xor r1 r5 r1 #Removes implicit one
+b+im2 r2 52 bp_bigger_than_52
+sub+im1 52 r2 r3
+add+im2 r3 1 r3
+shl r1 r3 r1
+jmp 0 0 int_to_double_shift_done
+
+label bp_bigger_than_52
+sub+im2 r2 52 r3
+shr r1 r3 r1
+
+label int_to_double_shift_done
+
+#We add by 1022 and not 1023 because bp doesnt return an indexed format, it returns a numbered format (so bp 1 is 1, not 0)
+add+im1 1022 r2 r2 # r2 is now the mantissa
+shl+im2 r2 52 r2
+or r1 r2 r1
+or r1 r4 r1
+pop 0 0 r5
+pop 0 0 r4
+pop 0 0 r3
+pop 0 0 r2
+ret 0 0 0
+
+label draw_triangle
+push r1 0 0 #x1
+push r2 0 0 #y1
+push r3 0 0 #color
+push r4 0 0 #x2
+push r5 0 0 #y2
+push r6 0 0 #x3
+push r7 0 0 #y3
+
+#Between x1,y1 and x2,y2:
+call 0 0 draw_line
+
+#Between x2, y2 and x3, y3:
+push r1 0 0
+push r2 0 0
+mov r6 0 r1
+mov r7 0 r2
+call 0 0 draw_line
+pop 0 0 r2
+pop 0 0 r1
+
+#Between x1, y1 and x3, y3
+#No need to push r4 and r5 since we wont use them anymore
+mov r6 0 r4
+mov r7 0 r5
+call 0 0 draw_line
+
+pop 0 0 r7
+pop 0 0 r6
+pop 0 0 r5
+pop 0 0 r4
+pop 0 0 r3
+pop 0 0 r2
+pop 0 0 r1
+ret 0 0 0
+
+label turn_3d_point_to_2d_point
+#r1 is the index of the vertex in ram
+#r2 and r3 is the output where r2 is the x_screen and r3 is the y_screen
+push r1 0 0
+push r4 0 0
+
+mov+im1 save_vector 0 r2
+call 0 0 copy_vector
+
+mov+im1 model_matrix 0 r2
+mov+im1 temporary_vector 0 r3
+call 0 0 multiply_vector_with_4x4 #Convert from object space to world space (M * vector_object)
+
+
+#Since we wont need the object vector anymore, we can just use that as the result vector
+mov r1 0 r3
+mov+im1 view_matrix 0 r2
+mov+im1 temporary_vector 0 r1
+call 0 0 multiply_vector_with_4x4 #Convert from world space to camera space (V * vector_object)
+
+
+mov r3 0 r1
+mov+im1 projection_matrix 0 r2
+mov+im1 temporary_vector 0 r3
+call 0 0 multiply_vector_with_4x4 #Convert from camera space to clip space (P * vector_camera)
+
+mov r1 0 r2 
+mov+im1 temporary_vector 0 r1
+call 0 0 copy_vector #Copies from the temporary_vector to the vertex_vector
+
+mov r2 0 r1 #Just makes r1 equal to the adress of the vertex_vector again
+
+add+im2 r1 3 r2 #Stores w, the fourth component of the vertex_vector
+lram 0 r2 r2
+
+lram 0 r1 r3 #v_x
+divd r3 r2 r3 #v_x/w
+
+add+im1 r1 1 r4 #addres of v_y
+lram 0 r4 r4 #v_y
+divd r4 r2 r4 #v_y/w
+
+addd+im2 r3 double_1 r3 #x+1
+subd+im1 double_1 r4 r4 #1-y_ndc
+
+mov+im1 width 0 r1
+call 0 0 int_to_double
+divd+im2 r1 double_2 r1 #width / 2
+muld r1 r3 r3
+
+mov+im1 height 0 r1
+call 0 0 int_to_double
+divd+im2 r1 double_2 r1 #height / 2
+muld r4 r1 r4
+
+mov r3 0 r2
+mov r4 0 r3
+
+pop 0 0 r4
+pop 0 0 r1
+
+push r2 0 0
+mov r1 0 r2
+mov+im1 save_vector 0 r1
+
+call 0 0 copy_vector
+
+mov r2 0 r1
+pop 0 0 r2
+
+ret 0 0 0
+
+label copy_vector
+#OBS! ASSUMING 4D VECTOR
+
+#r1 is the adress of the vector that's being copied
+#r2 is the adress of the vector that's being copied to
+push r3 0 0 #i
+push r4 0 0 #Stores adress of the first vector
+push r5 0 0 #Stores adress of the second vector
+mov+im1 0 0 r3 #i=0
+
+label copy_vector_i_loop
+add r1 r3 r4
+add r2 r3 r5
+lram 0 r4 r4
+sram r4 r5 0
+add+im2 r3 1 r3
+l+im2 r3 4 copy_vector_i_loop
+
+pop 0 0 r5
+pop 0 0 r4
+pop 0 0 r3
+
+ret 0 0 0
+
+label draw_vertex_triangle
+#r1, r2, r3 is the first, second and third vertex respectivly
+#r4 is the color
+
+push r1 0 0
+push r2 0 0
+push r3 0 0
+push r4 0 0
+push r5 0 0
+push r6 0 0
+push r7 0 0
+push r8 0 0
+push r9 0 0
+push r10 0 0
+push r11 0 0
+
+add+im2 r1 vertices_array r1
+add+im2 r2 vertices_array r2
+add+im2 r3 vertices_array r3
+
+push r3 0 0
+push r2 0 0
+call 0 0 turn_3d_point_to_2d_point
+mov r2 0 r5
+mov r3 0 r6
+pop 0 0 r2
+mov r2 0 r1
+call 0 0 turn_3d_point_to_2d_point
+mov r2 0 r7
+mov r3 0 r8
+pop 0 0 r3
+mov r3 0 r1
+call 0 0 turn_3d_point_to_2d_point
+mov r2 0 r9
+mov r3 0 r10
+
+mov r5 0 r1
+mov r6 0 r2
+mov r4 0 r3
+mov r7 0 r4
+mov r8 0 r5
+mov r9 0 r6
+mov r10 0 r7
+
+subd r4 r1 r8 #dx_1
+subd r5 r2 r9 #dy_1
+subd r6 r1 r10 #dx_2
+subd r7 r2 r11 #dy_2
+
+muld r8 r11 r8 #dx_1*dy_2
+muld r9 r10 r9 #dy_1*dx_2
+
+subd r8 r9 r8
+
+bed+im2 r8 0 draw_vertex_triangle_done #It should be less or equal here (le) but there's something wrong in the code so we use bigger or equal (be) to fix it
+
+call 0 0 draw_triangle
+
+label draw_vertex_triangle_done
+
+pop 0 0 r11
+pop 0 0 r10
+pop 0 0 r9
+pop 0 0 r8
+pop 0 0 r7
+pop 0 0 r6
+pop 0 0 r5
+pop 0 0 r4
+pop 0 0 r3
+pop 0 0 r2
+pop 0 0 r1
+
+ret 0 0 0 
+
+label multiply_vector_with_4x4
+#r1 is the adress of the vector
+#r2 is the adress of the matrix
+#r3 is the adress where the output vector is stored, let's call it u
+push r4 0 0 #i
+push r5 0 0 #j
+push r6 0 0 #sum
+push r7 0 0 #M[i][j]
+push r8 0 0 #v[j]
+
+mov+im1 0 0 r4 #Set i to 0
+
+label multiply_v_w_4x4_i_loop
+mov+im1 0 0 r6 #Set sum to 0
+mov+im1 0 0 r5 #Set j to 0
+
+label multiply_v_w_4x4_j_loop
+#Get M[i][j] (i*4 + j + address of M)
+mul+im2 r4 4 r7 #(i*4)
+add r7 r5 r7 #(+j)
+add r7 r2 r7 #(+address of M)
+lram 0 r7 r7 #M[i][j]
+
+add r1 r5 r8 #Address of v[j] (i + addres of vector)
+lram 0 r8 r8 #v[j]
+
+muld r7 r8 r7 #M[i][j] * v[j]
+addd r6 r7 r6 #sum += M[i][j] * v[j]
+
+add+im2 r5 1 r5 #j++
+l+im2 r5 4 multiply_v_w_4x4_j_loop
+
+add r4 r3 r7 #The adress of u[i]
+sram r6 r7 0 #Sets u[i] to the sum
+
+add+im2 r4 1 r4 #i++
+l+im2 r4 4 multiply_v_w_4x4_i_loop
+
+pop 0 0 r8
+pop 0 0 r7
+pop 0 0 r6
+pop 0 0 r5
+pop 0 0 r4
+
+ret 0 0 0
+
+label multiply_4x4_with_4x4
+#r1 is the adress in ram of the first matrix
+#r2 is the adress in ram of the second matrix
+#r3 is the adress in ram of where the matrix will be stored
+push r4 0 0 #i
+push r5 0 0 #j
+push r6 0 0 #k
+push r7 0 0 #Sum for each element in the new matrix
+push r8 0 0 #Used to store A[i][k] and A[i][k] * B[k][j]
+push r9 0 0 #Used to store B[k][j]
+
+mov+im1 0 0 r4 
+label mul_4x4_w_4x4_i_loop
+mov+im1 0 0 r5
+label mul_4x4_w_4x4_j_loop
+mov+im1 0 0 r6
+mov+im1 0 0 r7 #Set the sum to 0
+label mul_4x4_w_4x4_k_loop
+#Get A[i][k] (i*4+k + address of A)
+mul+im2 r4 4 r8 #(i*4)
+add r8 r6 r8 #(+k)
+add r8 r1 r8 #(+addres of A)
+lram 0 r8 r8
+
+#Get B[k][j] (k*4+j + addres of A)
+mul+im2 r6 4 r9 #(k*4)
+add r9 r5 r9 #(+j)
+add r9 r2 r9 #(+adress of B)
+lram 0 r9 r9
+
+#sum += A[i][k] * B[k][j]
+muld r8 r9 r8
+addd r7 r8 r7
+
+add+im2 r6 1 r6 #k++
+l+im2 r6 4 mul_4x4_w_4x4_k_loop
+
+
+#Calculate the adress of C[i][j] (i*4+j + addres of C)
+mul+im2 r4 4 r8 #(i*4)
+add r8 r5 r8 #(+j)
+add r8 r3 r8 #(+addres of C)
+sram r7 r8 0 #Save to C
+
+add+im2 r5 1 r5 #j++
+l+im2 r5 4 mul_4x4_w_4x4_j_loop
+
+
+add+im2 r4 1 r4 #i++
+l+im2 r4 4 mul_4x4_w_4x4_i_loop
+
+pop 0 0 r9
+pop 0 0 r8
+pop 0 0 r7
+pop 0 0 r6
+pop 0 0 r5
+pop 0 0 r4
+
+ret 0 0 0
+
+label calculate_model_matrix
+push r1 0 0 
+push r2 0 0
+push r3 0 0
+
+mov+im1 rotation_matrix 0 r1
+mov+im1 scale_matrix 0 r2
+mov+im1 temporary_matrix 0 r3
+
+call 0 0 multiply_4x4_with_4x4 #R * S 
+
+mov+im1 translation_matrix 0 r1
+mov+im1 temporary_matrix 0 r2 
+mov+im1 model_matrix 0 r3
+
+call 0 0 multiply_4x4_with_4x4 #T * R * S 
+
+pop 0 0 r3
+pop 0 0 r2
+pop 0 0 r1
+
+ret 0 0 0
+
+label draw_frame
+#Set scale matrix to:
+#[scale_x 0       0       0]
+#[0       scale_y 0       0]
+#[0       0       scale_z 0]
+#[0       0       0       1]
+sram+imb scale_x scale_matrix 0
+sram+imb scale_y scale_matrix+5 0
+sram+imb scale_z scale_matrix+10 0
+sram+imb double_1 scale_matrix+15 0
+
+call 0 0 calculate_rotation_matrix
+
+#Set translation matrix to:
+#[1    0    0    pos_x]
+#[0    1    0    pos_y]
+#[0    0    1    pos_z]
+#[0    0    0    1    ]
+
+sram+imb double_1 translation_matrix 0
+sram+imb pos_x translation_matrix+3 0
+sram+imb double_1 translation_matrix+5 0
+sram+imb pos_y translation_matrix+7 0
+sram+imb double_1 translation_matrix+10 0
+sram+imb pos_z translation_matrix+11 0
+sram+imb double_1 translation_matrix+15 0
+
+call 0 0 calculate_model_matrix
+
+call 0 0 calculate_view_matrix
+
+#Set projection matrix to:
+#[1/(a*tan(fov/2))    0                 0                                 0                               ]
+#[0                   1/(tan(fov/2))    0                                 0                               ]
+#[0                   0                 -(z_far+z_near)/(z_far-z_near)    -(2*z_far*z_near)/(z_far-z_near)]
+#[0                   0                 -1                                0                               ]
+
+divd+imb fov double_2 r1 #fov/2
+call 0 0 tan #tan(fov/2)
+divd+im1 double_1 r1 r1 #1/(tan(fov/2))
+sram+im2 r1 projection_matrix+5 0
+lram+im2 0 aspect_ratio r2
+divd r1 r2 r1 #1/(a * tan(fov/2))
+sram+im2 r1 projection_matrix 0
+
+subd+imb z_far z_near r1 #z_far - z_near
+divd+im1 negative_double_1 r1 r1 #-1/(z_far - z_near)
+addd+imb z_far z_near r2 #z_far + z_near
+muld r2 r1 r2 #-(z_far + z_near)/(z_far - z_near)
+sram+im2 r2 projection_matrix+10 0
+muld+imb z_far z_near r2 #z_far * z_near
+muld+im2 r2 double_2 r2 #2 * z_far * z_near
+muld r2 r1 r2 # - 2 * z_far * z_near / (z_far - z_near)
+sram+im2 r2 projection_matrix+11 0 
+
+sram+imb 0 projection_matrix+1 0
+sram+imb 0 projection_matrix+2 0
+sram+imb 0 projection_matrix+3 0
+sram+imb 0 projection_matrix+4 0
+sram+imb 0 projection_matrix+6 0
+sram+imb 0 projection_matrix+7 0 
+sram+imb 0 projection_matrix+8 0
+sram+imb 0 projection_matrix+9 0
+sram+imb 0 projection_matrix+12 0
+sram+imb 0 projection_matrix+13 0
+sram+imb negative_double_1 projection_matrix+14 0
+sram+imb 0 projection_matrix+15 0
+
+mov+im1 0 0 r1 #i
+label draw_frame_i_loop
+mul+im2 r1 3 r6
+add+im2 r6 triangle_array r6
+push r4 0 0
+
+lram 0 r6 r3 #Vertex 1
+
+mul+im2 r3 4 r3 #Multiply by 4 so we get the array position (they are 4d vectors, therefore we multiply by 4)
+
+add+im2 r6 1 r2
+lram 0 r2 r4 #Vertex 2
+mul+im2 r4 4 r4 #Multiply by 4 so we get the array position (they are 4d vectors, therefore we multiply by 4)
+
+add+im2 r6 2 r2
+lram 0 r2 r5 #Vertex 3
+mul+im2 r5 4 r5 #Multiply by 4 so we get the array position (they are 4d vectors, therefore we multiply by 4)
+
+push r1 0 0
+mov r3 0 r1
+mov r4 0 r2
+mov r5 0 r3
+pop 0 0 r7
+pop 0 0 r4
+push r7 0 0
+call 0 0 draw_vertex_triangle
+pop 0 0 r1
+add+im2 r1 1 r1
+lram+im2 0 num_of_triangles r8
+l r1 r8 draw_frame_i_loop
+
+ret 0 0 0
+
+label calculate_view_matrix
+
+push r1 0 0
+push r2 0 0
+push r3 0 0
+push r4 0 0
+
+#Calculate forward
+#[cos(pitch) * sin(yaw)]
+#[      sin(pitch)     ]
+#[cos(pitch) * cos(yaw)]
+
+lram+im2 0 camera_pitch r1 #r1 is pitch
+lram+im2 0 camera_yaw r2 #r2 is yaw
+
+push r1 0 0
+call 0 0 sin #sin(pitch)
+mov r1 0 r3 #r3 now stores sin(pitch)
+pop 0 0 r1
+
+call 0 0 cos #cos(pitch), r1 now stores cos(pitch)
+
+push r1 0 0 
+mov r2 0 r1
+call 0 0 cos #cos(yaw)
+mov r1 0 r4 #r4 now stores cos(yaw)
+
+mov r2 0 r1
+call 0 0 sin #sin(yaw)
+mov r1 0 r2 #r2 now stores sin(yaw)
+
+pop 0 0 r1
+
+muld r1 r2 r2 #cos(pitch) * sin(yaw) , we store in r2 since we wont use sin(yaw) anymore
+sram+im2 r2 forward_vector 0 #Store in forward_x
+
+sram+im2 r3 forward_vector+1 0 #sin(pitch), store in forward_y
+
+muld r1 r4 r2 #cos(pitch) * cos(yaw)
+sram+im2 r2 forward_vector+2 0 #Store in forward_z
+
+#Calculate right
+mov+im1 forward_vector 0 r1
+mov+im1 world_up 0 r2
+mov+im1 right_vector 0 r3
+call 0 0 cross_product_3d_vector #Set right to forward × world_up
+mov+im1 right_vector 0 r1
+mov+im1 right_vector 0 r2
+call 0 0 normalize_3d_vector #Right = Normalize(Right)
+
+#Calculate up
+
+mov+im1 right_vector 0 r1
+mov+im1 forward_vector 0 r2
+mov+im1 up_vector 0 r3
+call 0 0 cross_product_3d_vector  #Set up to right × forward
+
+
+#Set view matrix to:
+#[right_x       right_y       right_z       -right ⋅ camera ]
+#[up_x          up_y          up_z          -up ⋅ camera    ]
+#[-forward_x    -forward_y    -forward_z    forward ⋅ camera]
+#[0             0             0             1               ]
+
+lram+im2 0 right_vector r1 #right_x
+sram+im2 r1 view_matrix 0
+call 0 0 negate_double
+sram+im2 r1 temporary_vector 0 #-right_x for the last column in the row
+
+lram+im2 0 right_vector+1 r1 #right_y
+sram+im2 r1 view_matrix+1 0
+call 0 0 negate_double
+sram+im2 r1 temporary_vector+1 0 #-right_y for the last column in the row
+
+lram+im2 0 right_vector+2 r1 #right_z
+sram+im2 r1 view_matrix+2 0
+call 0 0 negate_double
+sram+im2 r1 temporary_vector+2 0 #-right_z for the last column in the row
+
+mov+im1 temporary_vector 0 r1
+mov+im1 camera_position_vector 0 r2
+call 0 0 dot_product_3d_vector #-r ⋅ c
+sram+im2 r3 view_matrix+3 0
+
+lram+im2 0 up_vector r1 #up_x
+sram+im2 r1 view_matrix+4 0
+call 0 0 negate_double
+sram+im2 r1 temporary_vector 0 #-up_x for the last column in the row
+
+lram+im2 0 up_vector+1 r1 #up_y
+sram+im2 r1 view_matrix+5 0
+call 0 0 negate_double
+sram+im2 r1 temporary_vector+1 0 #-up_y for the last column in the row
+
+lram+im2 0 up_vector+2 r1 #up_z
+sram+im2 r1 view_matrix+6 0
+call 0 0 negate_double
+sram+im2 r1 temporary_vector+2 0 #-up_z for the last column in the row
+
+mov+im1 temporary_vector 0 r1
+mov+im1 camera_position_vector 0 r2
+call 0 0 dot_product_3d_vector #-u ⋅ c
+sram+im2 r3 view_matrix+7 0
+
+lram+im2 0 forward_vector r1 #forward_x
+call 0 0 negate_double #-forward_x
+sram+im2 r1 view_matrix+8 0
+
+lram+im2 0 forward_vector+1 r1 #forward_y
+call 0 0 negate_double #-forward_y
+sram+im2 r1 view_matrix+9 0
+
+lram+im2 0 forward_vector+2 r1 #forward_z
+call 0 0 negate_double #-forward_z
+sram+im2 r1 view_matrix+10 0
+
+mov+im1 forward_vector 0 r1
+mov+im1 camera_position_vector 0 r2
+call 0 0 dot_product_3d_vector #f ⋅ c
+sram+im2 r3 view_matrix+11 0
+
+sram+imb 0 view_matrix+12 0
+sram+imb 0 view_matrix+13 0
+sram+imb 0 view_matrix+14 0
+sram+imb double_1 view_matrix+15 0
+
+pop 0 0 r4
+pop 0 0 r3
+pop 0 0 r2
+pop 0 0 r1
+
+ret 0 0 0
+
+label calculate_rotation_matrix
+ 
+#Variables used for rotation matrix
+push r1 0 0 #cx
+push r2 0 0 #sx
+push r3 0 0 #cy
+push r4 0 0 #sy
+push r5 0 0 #cz
+push r6 0 0 #sz
+push r7 0 0 #temporary
+push r8 0 0 #temporary
+
+mov+im1 rot_z 0 r1
+call 0 0 sin
+mov r1 0 r6 
+mov+im1 rot_z 0 r1
+call 0 0 cos
+mov r1 0 r5
+mov+im1 rot_y 0 r1
+call 0 0 sin
+mov r1 0 r4 
+mov+im1 rot_y 0 r1
+call 0 0 cos
+mov r1 0 r3
+mov+im1 rot_x 0 r1
+call 0 0 sin
+mov r1 0 r2 
+mov+im1 rot_x 0 r1
+call 0 0 cos
+
+#Set rotation matrix to:
+#[cycz    czsxsy-cxsz    cxczsy+sxsz     0]
+#[cysz    cxcz+sxsysz    -czsx+cxsysz    0]
+#[-sy     cysx           cxcy            0]
+#[0       0              0               1]
+
+muld r3 r5 r7 #cycz
+sram+im2 r7 rotation_matrix 0 #rot_11
+
+muld r5 r2 r7 #czsx
+muld r7 r4 r7 #czsxsy
+muld r1 r6 r8 #cxsz
+subd r7 r8 r7 #czsxsy - cxsz
+sram+im2 r7 rotation_matrix+1 0 #rot_12
+
+muld r1 r5 r7 #cxcz
+muld r7 r4 r7 #cxczsy
+muld r2 r6 r8 #sxsz
+addd r7 r8 r7 #cxczsy+sxsz
+sram+im2 r7 rotation_matrix+2 0 #rot_13
+
+sram+imb 0 rotation_matrix+3 0 #rot_14
+
+muld r3 r6 r7 #cysz
+sram+im2 r7 rotation_matrix+4 0 #rot_21
+
+muld r1 r5 r7 #cxcz
+muld r2 r4 r8 #sxsy
+muld r8 r6 r8 #sxsysz
+addd r7 r8 r7 #cxcz+sxsysz
+sram+im2 r7 rotation_matrix+5 0 #rot_22
+
+muld r1 r4 r7 #cxsy
+muld r7 r6 r7 #cxsysz
+muld r5 r2 r8 #czsx
+subd r7 r8 r7 #cxsysz-czsx
+sram+im2 r7 rotation_matrix+6 0 #rot_23
+
+sram+imb 0 rotation_matrix+7 0 #rot_24
+
+subd+im1 0 r4 r7 #-sy
+sram+im2 r7 rotation_matrix+8 0 #rot_31
+
+muld r3 r2 r7 #cysx
+sram+im2 r7 rotation_matrix+9 0 #rot_32
+
+muld r1 r3 r7 #cxcy
+sram+im2 r7 rotation_matrix+10 0 #rot_33
+
+sram+imb 0 rotation_matrix+11 0 #rot_34
+
+sram+imb 0 rotation_matrix+12 0 #rot_41
+
+sram+imb 0 rotation_matrix+13 0 #rot_42
+
+sram+imb 0 rotation_matrix+14 0 #rot_43
+
+sram+imb double_1 rotation_matrix+15 0 #rot_44
+
+pop 0 0 r8
+pop 0 0 r7
+pop 0 0 r6
+pop 0 0 r5
+pop 0 0 r4
+pop 0 0 r3
+pop 0 0 r2
+pop 0 0 r1
+
+ret 0 0 0
+
+label dot_product_3d_vector
+#r1 is the first vector, r2 is the second vector and r3 is the output
+push r4 0 0 #Temporary 
+push r5 0 0 #Temporary
+
+lram 0 r1 r4 #vx
+lram 0 r2 r5 #wx
+
+muld r4 r5 r3 #vx * wx
+
+add+im2 r1 1 r4 #Address of vy
+add+im2 r2 1 r5 #Address of wy
+
+lram 0 r4 r4 #vy
+lram 0 r5 r5 #wy
+
+muld r4 r5 r4 #vy * wy
+addd r3 r4 r3 #vx * wx + vy * wy
+
+add+im2 r1 2 r4 #Address of vz
+add+im2 r2 2 r5 #Address of wz
+
+lram 0 r4 r4 #vz
+lram 0 r5 r5 #wz
+
+muld r4 r5 r4 #vz * wz
+addd r3 r4 r3 #vx * wx + vy * wy + vz * wz
+
+pop 0 0 r5
+pop 0 0 r4
+
+ret 0 0 0
+
+label cross_product_3d_vector
+#OBS! The output vector CANNOT be the same as the first or second vector 
+#r1 is the adress of the first vector, r2 is the adress of the second vector and r3 is the adress of the output vector
+push r4 0 0 #Temporary
+push r5 0 0 #Temporary
+push r6 0 0 #Temporary
+
+
+
+add+im2 r1 1 r4 #Adress of vy
+add+im2 r2 2 r5 #Adress of wz
+
+lram 0 r4 r4 #vy
+lram 0 r5 r5 #wz
+
+muld r4 r5 r6 #vy * wz
+
+add+im2 r1 2 r4 #Adress of vz
+add+im2 r2 1 r5 #Adress of wy
+
+lram 0 r4 r4 #vz
+lram 0 r5 r5 #wy
+
+muld r4 r5 r5 #vz * wy
+subd r6 r5 r6 #vy * wz - vz * wy
+
+sram r6 r3 0 #Save to ux
+
+
+
+add+im2 r1 2 r4 #Adress of vz
+
+lram 0 r4 r4 #vz
+lram 0 r2 r5 #wx
+
+muld r4 r5 r6 #vz * wx
+
+add+im2 r2 2 r5 #Adress of wz
+
+lram 0 r1 r4 #vx
+lram 0 r5 r5 #wz
+
+muld r4 r5 r5 #vx * wz
+subd r6 r5 r6 #vz * wx - vx * wz
+
+add+im2 r3 1 r4
+sram r6 r4 0 #Save to uy
+
+
+
+add+im2 r2 1 r5 #Adress of wy
+
+lram 0 r1 r4 #vx
+lram 0 r5 r5 #wy
+
+muld r4 r5 r6 #vx * wy
+
+add+im2 r1 1 r4 #Adress of vy
+
+lram 0 r4 r4 #vy
+lram 0 r2 r5 #wx
+
+muld r4 r5 r5 #vy * wx
+subd r6 r5 r6 #vx * wy - vy * wx
+
+add+im2 r3 2 r4
+sram r6 r4 0 #Save to uz
+
+pop 0 0 r6
+pop 0 0 r5
+pop 0 0 r4
+
+ret 0 0 0
+
+label sub_3d_vector
+#r1 is the address of the first vector, r2 is the address of the second vector and r3 is the adress of the output vector
+push r4 0 0 #Temporary
+push r5 0 0 #Temporary
+
+lram 0 r1 r4 #vx
+lram 0 r2 r5 #wx
+subd r4 r5 r4 #vx - wx
+sram r4 r3 0 #Save to ux
+
+add+im2 r1 1 r4 #Address of vy
+add+im2 r2 1 r5 #Address of wy
+lram 0 r4 r4 #vy
+lram 0 r5 r5 #wy
+subd r4 r5 r4 #vy - wy
+add+im2 r3 1 r5 #Address of uy
+sram r4 r5 0 #Save to uy
+
+add+im2 r1 2 r4 #Address of vz
+add+im2 r2 2 r5 #Address of wz
+lram 0 r4 r4 #vz
+lram 0 r5 r5 #wz
+subd r4 r5 r4 #vz - wz
+add+im2 r3 2 r5 #Address of uz
+sram r4 r5 0 #Save to uz
+
+pop 0 0 r5
+pop 0 0 r4
+
+ret 0 0 0
+
+label normalize_3d_vector
+#r1 is the adress of the vector and r2 is the output vector
+push r3 0 0 #Temporary
+push r4 0 0 #Temporary
+push r5 0 0 #Temporary
+
+lram 0 r1 r3 #x
+muld r3 r3 r3 #x^2
+
+add+im2 r1 1 r4
+lram 0 r4 r4 #y
+muld r4 r4 r4 #y^2
+
+add+im2 r1 2 r5
+lram 0 r5 r5 #z
+muld r5 r5 r5 #z^2
+
+addd r5 r4 r5 #y^2 + z^2
+addd r5 r3 r5 #x^2 + y^2 + z^2
+
+push r1 0 0
+mov r5 0 r1
+call 0 0 sqrt #sqrt(x^2 + y^2 + z^2), ||v||
+mov r1 0 r5 
+pop 0 0 r1
+
+lram 0 r1 r3 #x
+divd r3 r5 r3 #x / ||v||
+sram r3 r2 0 #Save to address r2
+
+add+im2 r1 1 r3
+lram 0 r3 r3 #y
+divd r3 r5 r3 #y / ||v||
+add+im2 r2 1 r4 #Second elemnt of the vector
+sram r3 r4 0 #Save to address r4
+
+add+im2 r1 2 r3
+lram 0 r3 r3 #z
+divd r3 r5 r3 #z / ||v||
+add+im2 r2 2 r4 #Third element of the vector
+sram r3 r4 0 #Save to address r4
+
+pop 0 0 r5
+pop 0 0 r4
+pop 0 0 r3
+
+ret 0 0 0
+
+label sin
+#Make it so the angle is in the intervall -PI to PI
+#r1 is the angle and the output
+push r2 0 0 #Temporary
+push r3 0 0 #Temporary
+
+addd+im2 r1 pi r1
+divd+im2 r1 tau r2
+push r1 0 0
+mov r2 0 r1
+call 0 0 double_to_int
+mov r1 0 r1
+call 0 0 int_to_double
+mov r1 0 r2
+pop 0 0 r1
+muld+im2 r2 tau r2
+subd r1 r2 r1
+subd+im2 r1 pi r1
+
+label has_clamped_angle
+# -pi <= x <= pi is now true
+
+#Get more accuracy by making interval to [-pi/2, pi/2]
+led+im2 r1 pi_div_2 sin_less_than_pi_div_2 
+subd+im1 pi r1 r1 # PI - x
+label sin_less_than_pi_div_2 
+mov r1 0 r1
+mov+im1 negative_pi_div_2 0 r3
+bed+im2 r1 negative_pi_div_2 sin_bigger_than_pi_div_2 
+subd+im1 negative_pi r1 r1 # -PI - x
+label sin_bigger_than_pi_div_2 
+
+muld r1 r1 r2 #r2 now stores x^2
+
+muld+im2 r2 double_1_div_120 r3 #x^2 * (1/120)
+subd+im1 double_1_div_6 r3 r3 #1/6 - (x^2 * (1/120))
+muld r2 r3 r3 #x^2 * (1/6 - (x^2 * (1/120)))
+subd+im1 double_1 r3 r3 #1 - (x^2 * (1/6 - (x^2 * (1/120))))
+muld r1 r3 r1 #x * (1 - (x^2 * (1/6 - (x^2 * (1/120)))))
+
+led+im2 r1 double_1 sin_less_than_one
+mov+im1 double_1 0 r1 
+
+label sin_less_than_one
+bed+im2 r1 negative_double_1 sin_done
+mov+im1 negative_double_1 0 r1
+
+label sin_done
+pop 0 0 r3
+pop 0 0 r2
+
+ret 0 0 0
+
+label cos
+addd+im2 r1 pi_div_2 r1
+call 0 0 sin
+ret 0 0 0
+
+label tan
+push r2 0 0 #Temporary
+
+push r1 0 0
+call 0 0 cos
+mov r1 0 r2
+pop 0 0 r1
+call 0 0 sin
+
+divd r1 r2 r1
+
+pop 0 0 r2
+
+ret 0 0 0
+
+label sqrt
+#Uses Newton-Raphson
+#r1 is number and also the output
+eq+im2 r1 0 sqrt_0_or_1
+eq+im2 r1 double_1 sqrt_0_or_1
+
+push r2 0 0 #r2 is the guess for the sqrt
+push r3 0 0 #i
+push r4 0 0 #Temporary
+push r5 0 0 #Temporary
+
+#Calculate the guess
+and+im2 r1 9218868437227405312 r2 #Exponent
+shr+im2 r2 52 r2 #Get exponent as int
+sub+im2 r2 1023 r2 #Get real exponent
+shr+im2 r2 1 r2 #Divide by 2
+add+im2 r2 1023 r2 #Get into double exponent again
+shl+im2 r2 52 r2 
+#The new exponent is the double 2^(exp/2)
+
+mov+im1 0 0 r3
+label sqrt_i_loop
+divd r1 r2 r4 #S / x
+addd r4 r2 r4 #(S / x) + x
+and+im2 r4 4503599627370495 r5 #Mantissa
+and+im2 r4 9218868437227405312 r4 #Exponent
+sub+im2 r4 4503599627370496 r4 #Exponent - 1 (divide by 2)
+#muld+im2 r4 double_half r2 #Set x to 0.5 * ((S / x) + x)
+or r5 r4 r2 #Set x to 0.5 * ((S / x) + x)
+add+im2 r3 1 r3
+l+im2 r3 5 sqrt_i_loop
+
+mov r2 0 r1
+
+pop 0 0 r5
+pop 0 0 r4
+pop 0 0 r3
+pop 0 0 r2
+
+ret 0 0 0
+
+label sqrt_0_or_1
+ret 0 0 0 #We don't need to do anything, the sqrt 1 is 1 and sqrt 0 is 0
+
+
+label round
+push r2 0 0
+and+im2 r1 sign_bit r2
+eq+im2 r2 0 round_positive 
+subd+im2 r1 double_half r1 #subs 0.5, making it round
+jmp 0 0 round_negating_done
+label round_positive
+addd+im2 r1 double_half r1 #adds 0.5, making it round
+label round_negating_done
+call 0 0 double_to_int
+pop 0 0 r2
+ret 0 0 0
+
+label negate_double
+#r1 is the input and output
+eq+im2 r1 0 negate_double_done
+xor+im2 r1 sign_bit r1
+label negate_double_done
+ret 0 0 0
+
+label load_model
+push r1 0 0 #File size
+push r2 0 0 #Temporary
+push r3 0 0 #Character
+push r4 0 0 #i
+push r5 0 0 #Mode, it can be none(0), hashtag(1), vertex(2) or face(3)
+push r6 0 0 #File size
+push r7 0 0 #Number
+push r8 0 0 #Divider
+push r9 0 0 #Current vertex index
+push r10 0 0 #Decimal mode
+push r11 0 0 #Negative numbe
+push r12 0 0 #Current face index
+#The number and divider is for vertex mode. We then have decimals, for example 5.4 and it would be stored as Number: 54, Divider: 10
+
+
+fld+im1 -1 0 r6 
+mov+im1 0 0 r4
+mov+im1 0 0 r9
+mov+im2 0 0 r12
+mov+im1 0 0 r7 #Set number to 0
+mov+im1 1 0 r8 #Set divisor to 1
+mov+im1 0 0 r10 #Set decimal mode to 0
+mov+im1 0 0 r11 #Set positive number to default
+
+label load_model_loop
+fld r4 0 r3 #Load the character
+and+im2 r3 255 r3 #Since the file loader gets the first 8 bytes we and it with 255 to only get the first byte
+
+eq+im2 r3 13 load_model_i_plus_plus
+neq+im2 r3 new_line no_new_line
+
+neq+im2 r5 2 new_line_no_vertex
+
+push r1 0 0
+mov r7 0 r1
+call 0 0 int_to_double
+mov r1 0 r7
+mov r8 0 r1
+call 0 0 int_to_double
+mov r1 0 r8
+pop 0 0 r1
+
+divd r7 r8 r7 #Now we store the number as a double by diving the numbe with the divider
+
+mul+im1 sign_bit r11 r2 #Multiply sign mode by sign_bit to get the signbit if its on and 0 otherwise
+or r7 r2 r7 #Add minus sign if there is any
+
+add+im2 r9 vertices_array r2
+sram r7 r2 0
+
+add+im2 r9 1 r9 #Add 1 to the current vertex index 
+
+add+im2 r9 vertices_array r2
+sram+im1 double_1 r2 0 #The vertices vector has a fourth component, w, which needs to be 1 in the beginning of the transformation
+
+add+im2 r9 1 r9 #Add another 1 to the current vertex index 
+
+mov+im1 0 0 r7 #Set number to 0
+mov+im1 1 0 r8 #Set divisor to 1
+mov+im1 0 0 r10 #Set decimal mode to 0
+mov+im1 0 0 r11 #Set negative mode to 0
+
+label new_line_no_vertex
+neq+im2 r5 3 new_line_no_face
+
+#Here we just need store r7
+add+im2 r12 triangle_array r2
+sub+im2 r7 1 r7 #We subtract one since object files doesn't use index format (so instead of 0, 1, 2... object files uses 1, 2, 3...)
+sram r7 r2 0 
+add+im2 r12 1 r12
+mov+im1 0 0 r7 #Set the number to 0
+
+label new_line_no_face
+mov+im1 0 0 r5 #Reset r5
+
+jmp 0 0 load_model_i_plus_plus
+
+label no_new_line
+neq+im2 r5 1 no_hashtag_mode
+jmp 0 0 load_model_i_plus_plus #If we're in hashtag mode and the character isn't a new line (which we already checked) we can just move on to the next character
+
+label no_hashtag_mode 
+neq+im2 r3 hashtag no_hashtag
+mov+im1 1 0 r5 #Turn on hashtag mode (IMPORTANT! Here we check if the character IS a hashtag, while we previosly checked if we were in hashtag MODE)
+jmp 0 0 load_model_i_plus_plus
+
+label no_hashtag
+neq+im2 r3 ascii_o no_o
+mov+im1 1 0 r5 #Turn on hashtag mode if we have an o (we don't have objects in this 3d engine)
+jmp 0 0 load_model_i_plus_plus
+
+label no_o
+neq+im2 r3 ascii_s no_s
+mov+im1 1 0 r5 #Turn on hashtag mode if we have a s (we don't have smoothing groups in this 3d engine)
+jmp 0 0 load_model_i_plus_plus
+
+label no_s
+
+neq+im2 r5 2 no_vertex_mode
+#Since we are now in vertex mode, we need to check multiple things
+#First, let's check for a space, since that means we're storing our number
+neq+im2 r3 space vertex_no_space
+push r1 0 0
+mov r7 0 r1
+call 0 0 int_to_double
+mov r1 0 r7
+mov r8 0 r1
+call 0 0 int_to_double
+mov r1 0 r8
+pop 0 0 r1
+
+divd r7 r8 r7 #Now we store the number as a double by diving the numbe with the divider
+
+mul+im1 sign_bit r11 r2 #Multiply sign mode by sign_bit to get the signbit if its on and 0 otherwise
+or r7 r2 r7 #Add minus sign if tehre is any
+
+add+im2 r9 vertices_array r2
+sram r7 r2 0
+
+add+im2 r9 1 r9 #Add 1 to the current vertex index 
+
+mov+im1 0 0 r7 #Set number to 0
+mov+im1 1 0 r8 #Set divisor to 1
+mov+im1 0 0 r10 #Set decimal mode to 0
+mov+im1 0 0 r11 #Set negative mode to 0
+
+jmp 0 0 load_model_i_plus_plus
+
+label vertex_no_space 
+neq+im2 r3 minus_sign vertex_no_minus
+mov+im1 1 0 r11 #Set negative mode to 1
+jmp 0 0 load_model_i_plus_plus
+
+label vertex_no_minus
+neq+im2 r3 point vertex_no_point
+mov+im1 1 0 r10 #Set decimal mode to 1
+jmp 0 0 load_model_i_plus_plus
+
+label vertex_no_point
+#Now we have a number since it wasn't a point, space or a minus sign
+sub+im2 r3 ascii_0 r2 #Store number in r2
+mul+im2 r7 10 r7 #Multiply the current number by ten
+add r7 r2 r7 #Add the current number
+neq+im2 r10 1 load_model_i_plus_plus #If we're not in decimal move on to the next character
+mul+im2 r8 10 r8 #Multiply divisor by 10 since we are in decimal mode
+jmp 0 0 load_model_i_plus_plus
+
+label no_vertex_mode
+neq+im2 r5 3 no_face_mode
+neq+im2 r3 space face_no_space
+#Here we just need store r8
+add+im2 r12 triangle_array r2
+sub+im2 r7 1 r7 #We subtract one since object files doesn't use index format (so instead of 0, 1, 2... object files uses 1, 2, 3...)
+sram r7 r2 0 
+add+im2 r12 1 r12
+mov+im1 0 0 r7 #Set the number to 0
+
+jmp 0 0 load_model_i_plus_plus
+
+label face_no_space
+#If it's not a space it's a number
+sub+im2 r3 ascii_0 r2 #Get the current number number
+mul+im2 r7 10 r7 #Multiply the stored number by 10
+add r7 r2 r7 #Add the current number
+jmp 0 0 load_model_i_plus_plus
+
+label no_face_mode
+neq+im2 r3 ascii_v no_v
+mov+im1 2 0 r5
+add+im2 r4 1 r4 #We can skip the next character since it's just an empty space
+jmp 0 0 load_model_i_plus_plus
+
+label no_v
+
+neq+im2 r3 ascii_f no_f
+mov+im1 3 0 r5
+add+im2 r4 1 r4 #We can skip the next character since it's just an empty space
+label no_f
+
+label load_model_i_plus_plus
+add+im2 r4 1 r4
+l r4 r6 load_model_loop
+
+div+im2 r12 3 r2
+sram+im2 r2 num_of_triangles 0 
+
+ret 0 0 0

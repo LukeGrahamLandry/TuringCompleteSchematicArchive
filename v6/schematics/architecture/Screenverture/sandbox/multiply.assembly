@@ -1,0 +1,45 @@
+"3"
+r0r4
+1
+r0r5
+r0to
+2
+r0r5
+"x"-63
+r0r1
+63
+r0r2
+add
+r3r4
+r0to
+"2"
+r0r4
+3
+r0r5
+r0to
+4
+r0r5
+":"
+r0r4
+4
+r0r5
+r0to
+4
+r0r5
+48 r0r5
+3 r0r1
+2 r0r2
+mul
+r5r1
+r3r2
+add
+r3r4
+6
+r0r5
+r0to
+0
+r0r1
+r0r2
+r0r3
+r0r4
+r0r5

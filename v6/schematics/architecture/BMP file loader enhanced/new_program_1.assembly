@@ -1,0 +1,35 @@
+const y1 0
+const x1 0
+const y2 5
+const x2 5
+0 0 0 0
+PLOT 0x000000 nul 0x0000FF
+PLOT 0x000101 nul 0x1111FF
+PLOT 0x000202 nul 0x2222FF
+PLOT 0x000303 nul 0x3333FF
+PLOT 0x000404 nul 0x4444FF
+PLOT 0x000505 nul 0x5555FF
+#PLOT 0x000606 nul 0x6666FF
+#PLOT 0x000707 nul 0x7777FF
+#PLOT 0x000808 nul 0x8888FF
+#PLOT 0x000909 nul 0x9999FF
+#PLOT 0x000A0A nul 0xAAAAFF
+#PLOT 0x000B0B nul 0xBBBBFF
+#PLOT 0x000C0C nul 0xCCCCFF
+#PLOT 0x000D0D nul 0xDDDDFF
+#PLOT 0x000E0E nul 0xEEEEFF
+#PLOT 0x000F0F nul 0xFFFFFF
+
+#error = 2*(y2 - y1) - (x2 - x1)
+# A = 2*(y2 - y1)
+# B = 2*(x2 - x1)
+#draw_pixel(x1,y1)
+
+#for x = x1 thru x2:
+# error = error + A
+
+# if error >= 0:
+#  y++
+#  error = error - B
+
+#draw_pixel(x,y)

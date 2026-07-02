@@ -1,0 +1,660 @@
+
+#==================== variables addresses =============================
+#keep 0-7 for normal registers 0-256 for "fast" registers
+
+const distArray 64 #(64 to 127) Array of 64 distances in int, for drawing
+
+# Most of these are fixed-point numbers with a scale of 10,000
+const posX 9        # this is camera position used for drawing not player pos, loc is player pos
+const posY 10
+const dirX 11
+const dirY 12
+const planeX 13
+const planeY 14
+const cameraX 15
+const rayDirX 16
+const rayDirY 17
+
+const mapX 18
+const mapY 19
+const dx 20
+const dy 21
+const sideDistX 22
+const sideDistY 23
+const stepX 24
+const stepY 25
+const hit 26
+const side 27
+const perpWallDist 28
+const wallID 29
+
+const waitTimer 30
+const debug 31
+
+const locX 32
+const locY 33
+
+# ======================= Ram addresses ==============================
+
+const tileMap 1000
+
+# ======================== Constants ================================
+#   Fixed point scale = 10,000
+
+const FIXED_SCALE 10000
+const waitTime 10000
+
+const f0 = 10000
+const f1 = 1000
+const f2 = 100
+const f3 = 10
+const f4 = 1
+
+const PI 31416          #3.141592654 in fixed point
+
+const tileMapWidth 16
+const tileMapHeight 16
+
+const screenW 64
+const screenH 64
+const hugeNumber = 10000000000
+
+
+# --- key constants --- 
+
+const key_rotRight 30
+const key_rotLeft 28
+const key_forward 29
+const key_left 42
+const key_back 43
+const key_right 44
+
+# ====================== CPU registers ============================
+
+const 7seg 256
+const gpu_cmd 256+2
+const gpu_id 256+3
+const gpu_pos 256+4
+const gpu_size 256+5
+const gpu_draw 256+6
+
+# ========================= GPU constants =========================
+
+const GPU_LOAD 1
+const GPU_SET 2
+const 16b 0x10000
+
+# START
+
+label start
+
+jsr init
+
+jsr drawFrame
+
+# ============== MAIN LOOP ===============================
+
+label mainLoop
+
+mov+i 0 counter
+#jsr printRayVars
+
+jsr controls
+
+div+i 30000 counter 7seg
+
+ja mainLoop
+
+# ================ draw frame =============================
+
+label drawFrame
+    jsr castRays
+    jsr drawColumns
+ret
+
+# =============== rotate ==================================
+
+label rotate
+#   r1 = rotation amount
+
+
+    #Dim oldDirX As Double = dirX
+    #dirX = dirX * Math.Cos(amount) - dirY * Math.Sin(amount)
+    #dirY = oldDirX * Math.Sin(amount) + dirY * Math.Cos(amount)
+
+    #r1 = rotation amount
+
+    cos r1 r2 #r2 = cos(angle)
+    sin r1 r3 #r3 = sin(angle)
+
+    # -- oldDirX --
+
+    mov dirX r4     #keep a copy of dirX
+
+    #-- dirX --
+
+    fmul dirX r2 r0
+    fmul dirY r3 r1
+
+    sub r0 r1 dirX
+
+    #-- dirY --
+
+    fmul r4 r3 r0
+    fmul dirY r2 r1
+
+    add r0 r1 dirY
+
+    #Dim oldPlaneX As Double = planeX
+    #planeX = planeX * Math.Cos(amount) - planeY * Math.Sin(amount)
+    #planeY = oldPlaneX * Math.Sin(amount) + planeY * Math.Cos(amount)
+
+    # -- oldPlaneX -- 
+
+    mov planeX r4     #keep a copy of planeX
+    
+    # -- planeX --
+
+    fmul planeX r2 r0
+    fmul planeY r3 r1
+
+    sub r0 r1 planeX
+
+    # -- planeY --
+
+    fmul r4 r3 r0
+    fmul planeY r2 r1
+
+    add r0 r1 planeY
+
+ret
+
+
+# =============== controls ==============================
+
+label controls
+
+    key+i key_rotRight r0
+    jne+i 1 r0 end_rotateRight
+
+        mov+i 30 r1
+        jsr rotate
+        jsr drawFrame
+
+        mov+i 30 r1
+        jsr rotate
+        jsr drawFrame
+
+        mov+i 30 r1
+        jsr rotate
+        jsr drawFrame
+
+        ret
+
+    label end_rotateRight
+
+    key+i key_rotLeft r0
+    jne+i 1 r0 end_rotateLeft
+
+        mov+i -30 r1
+        jsr rotate
+        jsr drawFrame
+
+        mov+i -30 r1
+        jsr rotate
+        jsr drawFrame
+
+        mov+i -30 r1
+        jsr rotate
+        jsr drawFrame
+
+        ret
+
+    label end_rotateLeft
+
+    key+i key_forward r0
+    jne+i 1 r0 end_forward
+
+        div+_i dirX 2 r0
+        div+_i dirY 2 r1
+
+        add locX r0 locX
+        add locY r1 locY
+
+        jsr drawFrame
+
+        div+_i dirX 2 r0
+        div+_i dirY 2 r1
+
+        add locX r0 locX
+        add locY r1 locY
+
+        jsr drawFrame
+
+        ret
+
+    label end_forward
+
+    key+i key_back r0
+    jne+i 1 r0 end_moveBack
+
+        div+_i dirX 2 r0
+        div+_i dirY 2 r1
+
+        sub locX r0 locX
+        sub locY r1 locY
+
+        jsr drawFrame
+
+        div+_i dirX 2 r0
+        div+_i dirY 2 r1
+
+        sub locX r0 locX
+        sub locY r1 locY
+
+        jsr drawFrame
+
+        ret
+
+    label end_moveBack
+
+    key+i 68 r0
+    jne+i 1 r0 end_triggerDraw
+
+        jsr printRayVars
+
+        jsr drawFrame
+
+        ret
+    label end_triggerDraw
+    
+ret
+
+
+# =================== init ==============================
+
+
+label init
+
+# Init Column Sprites
+
+mov+i 0 r1                  #init loop counter
+label loopInitColumns
+    mov+i GPU_SET gpu_cmd       #set gpu in SET mode
+    mov r1 gpu_id               #get column id
+    mul+_i r1 7 r0              #multiply by 7 (pixel size)
+    add+i 96+16*16b r0 r0       #add border
+    mov r0 gpu_pos              #write to gpu position
+    mov+i 7+448*16b gpu_size    #write size to gpu position
+    mov+i 0 gpu_draw            #send to gpu
+
+    inc r1
+jl+_i r1 64 loopInitColumns  #loop 64 times, continue when done
+
+#init level tiles
+
+ja skip_tileInit
+
+mov+i 0 r1 #set counter
+label loopTileWE
+    mul+i tileMapWidth r1 r2
+    add+i tileMap r2 r2
+    sram+_i r2 1
+
+    add+i 6 r2 r2
+    sram+_i r2 1
+
+    inc r1
+jle+_i r1 6 loopTileWE
+
+mov+i 0 r1 #reset counter
+label loopTileNS
+    #mul+i tileMapWidth r1 r2
+    add+i tileMap r1 r2         
+    sram+_i r2 1                      #tileMap(0,i) = 1
+
+    mul+ii tileMapWidth 6 r2
+    add+i r1 r2 r2
+    add+i tileMap r2 r2
+    sram+_i r2 1                      #tileMap(6,i) = 1
+
+    inc r1
+jle+_i r1 6 loopTileNS
+
+label skip_tileInit
+
+# west wall
+sram+ii tileMap + (0 * tileMapWidth) + 0 1
+sram+ii tileMap + (1 * tileMapWidth) + 0 1
+sram+ii tileMap + (2 * tileMapWidth) + 0 1
+sram+ii tileMap + (3 * tileMapWidth) + 0 1
+sram+ii tileMap + (4 * tileMapWidth) + 0 1
+sram+ii tileMap + (5 * tileMapWidth) + 0 1
+sram+ii tileMap + (6 * tileMapWidth) + 0 1
+
+# east wall
+sram+ii tileMap + (0 * tileMapWidth) + 6 1
+sram+ii tileMap + (1 * tileMapWidth) + 6 1
+sram+ii tileMap + (2 * tileMapWidth) + 6 1
+sram+ii tileMap + (3 * tileMapWidth) + 6 1
+sram+ii tileMap + (4 * tileMapWidth) + 6 1
+sram+ii tileMap + (5 * tileMapWidth) + 6 1
+sram+ii tileMap + (6 * tileMapWidth) + 6 1
+
+# north wall
+sram+ii tileMap + (0 * tileMapWidth) + 0 1
+sram+ii tileMap + (0 * tileMapWidth) + 1 1
+sram+ii tileMap + (0 * tileMapWidth) + 2 1
+sram+ii tileMap + (0 * tileMapWidth) + 3 1
+sram+ii tileMap + (0 * tileMapWidth) + 4 1
+sram+ii tileMap + (0 * tileMapWidth) + 5 1
+sram+ii tileMap + (0 * tileMapWidth) + 6 1
+
+# south wall
+sram+ii tileMap + (6 * tileMapWidth) + 0 1
+sram+ii tileMap + (6 * tileMapWidth) + 1 1
+sram+ii tileMap + (6 * tileMapWidth) + 2 1
+sram+ii tileMap + (6 * tileMapWidth) + 3 1
+sram+ii tileMap + (6 * tileMapWidth) + 4 1
+sram+ii tileMap + (6 * tileMapWidth) + 5 1
+sram+ii tileMap + (6 * tileMapWidth) + 6 1
+
+sram+ii tileMap + (3 * tileMapWidth) + 3 1
+sram+ii tileMap + (3 * tileMapWidth) + 4 1
+sram+ii tileMap + (3 * tileMapWidth) + 5 1
+
+sram+ii tileMap + (2 * tileMapWidth) + 3 1
+sram+ii tileMap + (2 * tileMapWidth) + 4 1
+sram+ii tileMap + (2 * tileMapWidth) + 5 1
+
+#------- Init player ---------
+
+mov+i 15*f1 posX
+mov+i 15*f1 posY
+
+mov+i 9996*f4 dirX  #testo
+mov+i -1 dirY
+
+mov+i 0*f0 planeX
+mov+i -5*f1 planeY  #-0.5
+mov+i 15*f1 locX
+mov+i 15*f1 locY
+
+ret
+
+#==================== Cast Rays =================================
+#   this is where the magic happens
+#   r1 = x/counter
+
+label castRays
+
+#init cam position according to angle
+
+fdiv+_i dirX 15*f1 r0
+fdiv+_i dirY 15*f1 r1
+
+sub locX r0 posX
+sub locY r1 posY
+
+
+mov+i 0 r1  #init column
+
+label loop_traceRays
+
+# Dim cameraX As Double = 2 * x / w - 1                                  'X in cam space
+
+    mul+i 2*FIXED_SCALE r1 r0           # 2 * x
+    fdiv+_i r0 screenW*FIXED_SCALE r0    # / w
+    sub+_i r0 1*f0 cameraX              # -1.0
+
+# Dim rayDirX As Double = dirX + planeX * cameraX
+    
+    fmul planeX cameraX r0               # * cameraX
+    add dirX r0 rayDirX                 # dirX + planeX
+
+# Dim rayDirY As Double = dirY + planeY * cameraX
+    fmul planeY cameraX r0               # * cameraX
+    add dirY r0 rayDirY                 # dirX + planeY
+    
+# Dim mapX As Integer = Math.Floor(posX)
+# Dim mapY As Integer = Math.Floor(posY)
+
+    div+_i posX FIXED_SCALE mapX        # not fixed point values
+    div+_i posY FIXED_SCALE mapY
+
+# Dim dx = hugeNumber                   ' = hugeNumber for cases where rayDir is 0
+# Dim dy = hugeNumber
+
+    mov+i hugeNumber dx
+    mov+i hugeNumber dy
+
+# If rayDirX <> 0 Then
+#     dx = Math.Abs(1 / rayDirX)
+# End If
+
+    je+i 0 rayDirX end_RayDirXNotZero
+        div+i 1*f0*FIXED_SCALE rayDirX r0
+        abs r0 dx
+    label end_RayDirXNotZero
+
+# If rayDirY <> 0 Then
+#     dy = Math.Abs(1 / rayDirY)
+# End If
+
+    je+i 0 rayDirY end_RayDirYNotZero
+        div+i 1*f0*FIXED_SCALE rayDirY r0
+        abs r0 dy
+    label end_RayDirYNotZero
+
+# If rayDirX < 0 Then
+#     stepX = -1
+#     sideDistX = (posX - mapX) * dx
+# Else
+#     stepX = 1
+#     sideDistX = (mapX + 1 - posX) * dx
+# End If
+
+    jge+_i rayDirX 0 else_rayDirXLowerZero
+        mov+i -1 stepX                    # stepX = -1
+
+        mul+i FIXED_SCALE mapX r0         #convert mapX to fixed point
+        sub posX r0 r0
+        fmul r0 dx sideDistX
+
+        ja end_rayDirXLowerZero
+    label else_rayDirXLowerZero
+        mov+i 1 stepX
+
+        mul+i FIXED_SCALE mapX r0         #convert mapX to fixed point
+        add+i 1*f0 r0 r0                  # mapX + 1.0
+        sub r0 posX r0                    # - posX
+        fmul r0 dx sideDistX
+    label end_rayDirXLowerZero
+
+# If rayDirY < 0 Then
+#     stepY = -1
+#     sideDistY = (posY - mapY) * dy
+# Else
+#     stepY = 1
+#     sideDistY = (mapY + 1 - posY) * dy
+# End If
+
+    jge+_i rayDirY 0 else_rayDirYLowerZero
+        mov+i -1 stepY                    # stepY = -1
+
+        mul+i FIXED_SCALE mapY r0         #convert mapY to fixed point
+        sub posY r0 r0
+        fmul r0 dy sideDistY
+
+        ja end_rayDirYLowerZero
+    label else_rayDirYLowerZero
+        mov+i 1 stepY
+
+        mul+i FIXED_SCALE mapY r0         #convert mapY to fixed point
+        add+i 1*f0 r0 r0                  # mapY + 1.0
+        sub r0 posY r0                    # - posX
+        fmul r0 dy sideDistY
+    label end_rayDirYLowerZero
+
+#hit = 0
+#While hit = 0
+# 
+#    'jump to next square
+#If sideDistX < sideDistY Then
+#        sideDistX += dx
+#        mapX += stepX
+#        side = 0
+#Else
+#        sideDistY += dy
+#        mapY += stepY
+#        side = 1
+#End If
+# 
+#    'check if tile is a wall
+#If tileMap(mapX, mapY) > 0 Then
+#        hit = 1
+#End If
+# 
+#End While
+
+
+    label while_noHit
+
+        jne+i 1 r1 skip_debug
+            mov r0 r0 #useless line for breakpoint
+        label skip_debug
+
+        jge sideDistX sideDistY else_sideDistXSmaller
+            add sideDistX dx sideDistX
+            add mapX stepX mapX
+            mov+i 0 side
+        ja end_sideDistXSmaller
+        label else_sideDistXSmaller
+            add sideDistY dy sideDistY
+            add mapY stepY mapY
+            mov+i 1 side
+        label end_sideDistXSmaller
+
+        mul+i tileMapWidth mapY r0
+
+        add mapX r0 r0
+        add+i tileMap r0 r0
+        lram r0 r2          # r0 = tileMap(mapX,mapY)
+
+    je+_i r2 0 while_noHit # if tileMap(mapX,mapY) is empty continue tracing
+    
+# If side = 0 Then
+#     perpWallDist = sideDistX - dx
+# Else
+#     perpWallDist = sideDistY - dy
+# End If
+
+    jne+i 0 side else_sideIsZero
+        sub sideDistX dx perpWallDist
+        ja end_sideIsZero
+    label else_sideIsZero
+        sub sideDistY dy perpWallDist
+    label end_sideIsZero
+
+    
+# If perpWallDist < 0.1 Then perpWallDist = 0.1
+    
+    jge+_i perpWallDist 1*f1 end_perpWallMin
+        mov+i 1*f1 perpWallDist
+    label end_perpWallMin
+
+# Dim LineHeight As Integer = h / perpWallDist
+# Dim wallId = 32 - (LineHeight / 4)
+# columnHeight(w - (x + 1)) = LineHeight
+# columnDist(w - (x + 1)) = Math.Min(Math.Max(wallId, 0), 31)
+
+    div+i FIXED_SCALE*FIXED_SCALE*screenH perpWallDist r0
+    fdiv+_i r0 20*f1 r0                         # /2 dividing by constant int no need to scale
+    sub+i 32*f0 r0 r0                           # 64 - (LineHeight/2)
+    div+_i r0 FIXED_SCALE wallID                # convert to integer (keep in r2)  
+
+    add+i 1 r1 r0
+    sub+i screenW r0 r0                         #(w - (x+1))
+    add+i distArray r0 r0
+
+    sram r0 wallID                              #save column ID
+
+    # jsr printRayVars
+
+    inc r1
+
+jl+_i r1 screenW loop_traceRays
+ret
+
+#------------ Draw loop -------------------------
+#   has to be as fast as possible
+#   could be faster with no loop
+
+label drawColumns
+
+mov+i GPU_LOAD gpu_cmd      #set gpu in LOAD mode
+mov+i 7+448*16b gpu_size    #set size
+
+mov+i 0 r1                  #set loop counter
+label loopDrawColumns
+    mov r1 gpu_id               #set ID
+
+    add+i distArray r1 r2       #get position and stuff
+    lram r2 r2
+    add+i 32 r2 r2              #add 32 for test values
+    mul+_i r2 7*16b r0          #calculate gpu position (should be pre-calculated)
+    mov r0 gpu_pos              #set gpu position
+
+    mov+i 0 gpu_draw            #send to gpu
+
+    inc r1
+jl+_i r1 64 loopDrawColumns
+ret
+
+
+# *********** debug stuff *************
+
+label wait
+    mov+i 0 waitTimer
+
+    label loop_wait
+        inc waitTimer
+    jne+i waitTime waitTimer loop_wait
+ret
+
+
+label printRayVars
+
+    mov r1 7seg
+
+    mov stepY stepY
+    mov sideDistY sideDistY
+    mov stepX stepX
+    mov sideDistX sideDistX
+    mov mapX mapX
+    mov mapY mapY
+    mov dx dx
+    mov dy dy
+    mov rayDirX rayDirX
+    mov rayDirY rayDirY
+    mov perpWallDist perpWallDist
+    mov cameraX cameraX
+	mov wallID wallID
+	
+	mov dirX dirX
+	mov dirY dirY
+    mov planeX planeX
+    mov planeY planeY
+
+
+label end_printRayVars
+ret
+
+
+label printF
+    mov debug debug
+ret
+
+# End execution (infinite loop yay!)
+label end
+ja end

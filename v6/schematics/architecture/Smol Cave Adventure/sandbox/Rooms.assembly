@@ -1,0 +1,38 @@
+# Constant room data
+# Each room is 6 bytes
+# flags, n, e, s, w, item
+# Room 0 is unused
+# Each room's description uses
+# the string corresponding to its
+# room id
+
+#flags
+const d 1 # Dark
+const b 2 # baddy (dwarf)
+const l 4 # Locked. Need key to go north
+
+0	0	0	0	0	0 # unused
+
+0	2	0	0	0	0 # 1 room
+0	4	3	1	0	0 # 2 bybuilding
+0	14	6	0	2	0 # 3 road
+0	5	0	2	0	0 # 4 clearing
+0	0	0	4	0	1 # 5 hill
+0	0	7	0	3	0 # 6 road
+0	0	0	8	6	0 # 7 entrance
+0	7	10	11	9	2 # 8 boulders
+0	0	8	12	13	0 # 9 stream
+0	0	20	0	8	0 # 10 canyon
+0	8	0	0	16	0 # 11 maze
+0	9	0	0	0	0 # 12 hobo camp
+0	0	9	17	0	0 # 13 todo
+0	15	0	3	0	0 # 14 hidden path
+0	0	0	0	4	3 # 15 lantern
+d	0	11	0	17	0 # 16 maze
+d	16	18	16	0	0 # 17 maze
+0	16	11	0	19	0 # 18 maze
+0	17	11	13	0	4 # 19 maze end
+d	21	0	23	10	0 # 20 dragon
+l	22	0	20	0	0 # 21 vault
+0	0	0	21	0	5 # 22 vault2
+0	20	0	18	0	0 # 23 fountain

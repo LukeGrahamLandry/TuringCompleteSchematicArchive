@@ -1,0 +1,267 @@
+const LOAD 1
+const POSITION 2
+
+const 16b_high 0x10000
+
+const bg_width 640
+const bg_height 480
+const bg_layer 0
+const sprite_layer 1
+
+const offset_x 144
+const offset_y 480
+const width 48
+const height 48
+
+const x 220
+const y 340
+
+# Loading background
+LOAD
+bg_layer
+0x00000000 # Image Offset 
+bg_height*16b_high+bg_width # dimensions
+
+# Setting sprite position before 
+# loading, so it doesn't appear at
+# 0:0 for a frame
+POSITION
+sprite_layer
+y*16b_high+x # Screen position 
+0 # Not used
+
+# Loading sprite
+LOAD
+sprite_layer
+offset_x*16b_high+offset_y # Image Offset 
+width*16b_high+height # dimensions
+
+POSITION
+sprite_layer
+(y-4)*16b_high+x # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-8)*16b_high+x+4 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-16)*16b_high+x+8 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-20)*16b_high+x+12 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-24)*16b_high+x+16 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-28)*16b_high+x+20 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-32)*16b_high+x+24 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-36)*16b_high+x+28 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-40)*16b_high+x+32 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-44)*16b_high+x+36 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-48)*16b_high+x+40 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-52)*16b_high+x+44 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-56)*16b_high+x+48 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-60)*16b_high+x+52 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-56)*16b_high+x+56 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-52)*16b_high+x+60 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-48)*16b_high+x+64 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-44)*16b_high+x+68 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-40)*16b_high+x+72 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-36)*16b_high+x+76 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-32)*16b_high+x+80 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-28)*16b_high+x+84 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-24)*16b_high+x+88 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-20)*16b_high+x+92 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-16)*16b_high+x+96 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-12)*16b_high+x+100 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-8)*16b_high+x+104 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y-4)*16b_high+x+108 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+y*16b_high+x+112 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y+4)*16b_high+x+116 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y+8)*16b_high+x+120 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y+12)*16b_high+x+124 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y+16)*16b_high+x+128 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y+20)*16b_high+x+132 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y+24)*16b_high+x+136 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y+28)*16b_high+x+140 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y+32)*16b_high+x+144 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y+36)*16b_high+x+148 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y+40)*16b_high+x+152 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y+44)*16b_high+x+156 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y+48)*16b_high+x+160 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y+52)*16b_high+x+164 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y+56)*16b_high+x+168 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y+60)*16b_high+x+172 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y+64)*16b_high+x+176 # Screen position 
+0 # Not used
+
+POSITION
+sprite_layer
+(y+68)*16b_high+x+180 # Screen position 
+0 # Not used

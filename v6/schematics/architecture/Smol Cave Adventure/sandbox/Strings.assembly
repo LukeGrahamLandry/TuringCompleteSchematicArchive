@@ -1,0 +1,149 @@
+# Constant string data
+# First each string address is listed
+# Then the strings themselves are 
+# listed
+0 # unused
+# room strings
+s1	s2	s3	s4	s5
+s6	s7	s8	s9	s10
+s11	s12	s13	s14	s15
+s16	s17	s18	s19	s20
+s21	s22	s23	s24	s25
+s26	s27	s28	s29	s30
+
+#item strings
+s31	s32	s33	s34	s35
+s36	s37	s38	s39	s40
+
+#special strings
+s41	s42	s43	s44	s45
+s46	s47	s48	s49	s50
+
+
+label s1
+"You are relaxing in a trophy room. It's comfortable but the shelves would look much better with treasure on them. The door leads north." 0
+
+label s2
+"You are just north of a small brick building. There is a forested path to the north. A rough gravel road leads east." 0
+
+label s3
+"You are following an east/west gravel road. There is literally nothing of interest here. You vow to keep walking until you find somewhere better." 0
+
+label s4
+"You have reached a clearing in the forest. A steep path leads north and south." 0 
+
+label s5
+"You are at the top of a tree covered hill. A rugged trail descends to the south. In the distance you can see what appears to be a cave entrance. A golden eagle has made its nest here." 0 
+
+label s6
+"The east/west road is muddy here, but otherwise remains completely boring." 0
+
+label s7
+"A nondescript road stretches west from here. Much more exciting is a cave entrance to the south." 0
+
+label s8
+"You scramble over dimly lit boulders to a chamber where you can almost stand. Passages lead off in all directions." 0
+
+label s9
+"A stream emerges from the surface here, carving passages to the south and west. A crampt crawlway goes east." 0
+
+label s10
+"You are in an awkward sloping east/west canyon." 0
+
+label s11
+"You are in a little twisty maze of passages." 0
+
+label s12
+"Someone has been here. The rocks are coated with a thin layer of soot. You spot an empty can of beans and an old shoe. A crumpled note in the shoe reads \"The road is more interesting than it seems. Go north.\" A small crevice leads back north." 0
+
+label s13
+"You are in a twisting maze of passages." 0
+
+label s14
+"You are on an overgrown trail. A clear path leads south, and a very confusing path leads north." 0
+
+label s15
+"You stumble into a small clearing. An obscure trail leads west. Off to one side you spot the remains of a hobo campsite. Tacked to a tree is a note saying \"Good job\"" 0
+
+label s16
+"You are in a twisty maze of little passages." 0
+
+label s17
+"You are in a twisty little maze of passages." 0
+
+label s18
+"You are in a maze of little twisting passages." 0
+
+label s19
+"You are in a crampt chamber full of stalactites. A pile of bones from some unfortunate creature lies in the corner." 0 
+
+label s20
+"You are in a splendid chamber 50 feet high. An ornate and very locked doorway leads north, while small passages continue south and east. A fire breathing dragon guards the room! Luckily he looks friendly." 0
+
+label s21
+"You discover a vault full of treasures! Paintings, antiques, gold, and diamonds line the room. As a treasure expert, you unfortunately realize they're all elaborate fakes. You angrily punch through a \"priceless painting\" to discover a secret passageway leading north." 0 
+
+label s22
+"To your surprise, you find a clean and organized room full of computer equipment. It looks as if someone has been here recently. Filing cabinets neatly adorn the walls, along with a circuit diagram for an 8-bit carry lookahead adder." 0 
+
+label s23
+"A natural fountain bubbles up from the floor here. A cool breeze chills the air. Small passages you can barely fit through branch off to the north and south." 0 
+label s24
+label s25
+label s26
+label s27
+label s28
+label s29
+label s30
+"Placeholder string" 0
+
+label s31
+"golden egg" 0
+
+label s32
+"shiny pebble" 0
+
+label s33
+"diamond encrusted lantern" 0
+
+label s34
+"ruby key" 0
+
+label s35
+"floppy disk labeled \"Turing Complete 1.0\"" 0
+
+label s36
+label s37
+label s38
+label s39
+label s40
+"Placeholder item" 0
+
+
+# Done with rooms. Custom strings.
+label s41
+"Welcome to Smol Cave Adventure! You are a daring explorer in search of fame and fortune. Your mission, should you choose to accept it, is to recover the legendary treasures from the Smol Cave system nearby.\nMake sure to turn on the keyboard, then press n,s,e,w to move. Press i to view your inventory. Good luck!" 0
+
+label s42
+"Try as you might, you can't go that direction." 0
+
+label s43
+"There is a " 0
+
+label s44
+" here. You take it for safe keeping." 0
+
+label s45
+"It is pitch black in that direction. If you proceed you will likely be eaten by a grue." 0
+
+label s46
+"You throw your body at the heavy metal door, but it doesn't budge. You should probably find a key." 0 
+
+label s47
+"You are carrying " 0
+
+label s48
+" of 5 treasures. " 0
+
+label s49
+"As you return to the trophy room, a wave of accomplishment washes over you. You have braved the legendary Smol Cave. You defeated the fire breathing dragon (kind of). You place your trophies on the shelves and think of what to do next...\nSuddenly you have an idea. You sit down at your computer and install Turing Complete 1.0. You start building something awesome. What will it be?\nThanks for playing!" 0

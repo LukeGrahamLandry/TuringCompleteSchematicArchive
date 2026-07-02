@@ -1,0 +1,17 @@
+# NOTE: uses RPN
+# +  -> a or p
+# -  -> s or m
+# *  -> t
+# /  -> d
+# %  -> r
+# powers:
+# ^2 ^3 ^4 ^5 ^6 ^7 ^8 ^9
+# S  C  V  P  H  F  E  N
+# NOTE: max stack size is 8
+# also numbers must be in the range
+# 8191 - -8192
+# MUST end with 'end'
+
+# example:
+x
+end

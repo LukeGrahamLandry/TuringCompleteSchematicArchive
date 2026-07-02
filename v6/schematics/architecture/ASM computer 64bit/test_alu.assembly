@@ -1,0 +1,6 @@
+jmp _ _
+call asd _
+put reg1 2
+label asd
+put reg0 1
+ret _ _

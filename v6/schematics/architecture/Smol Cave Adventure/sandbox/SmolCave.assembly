@@ -1,0 +1,246 @@
+# flags
+const darkFlag 1
+const lockedFlag 4
+
+# memory addrs
+const inventory 16
+const console 240
+const stringRom 241
+const roomRom 242
+const keyboard 243
+
+# register usage
+# reg0 always = 0
+# reg1 always = 1
+# reg 2-10 temp usage
+const x 7
+const y 8
+const z 9
+const w 10
+const room 11 # current room id
+const cmd 12 # player command
+const tmp 13
+const arg0 14
+const arg1 15
+
+mov|i 1	1
+
+# intro
+mov|i	41	arg0
+cal|i	_ printString
+mov|i	"\n"	arg0
+cal|i	_ printChar
+cal|i	_ printChar
+
+# Enter starting room
+mov|i	1	arg0
+cal|i	_ enterRoom
+
+cal|i	_ handleKeyboard
+hlt
+
+# Enter specified room
+# arg0: room index
+label enterRoom
+mov	arg0	room
+cal|i	checkWin/256 checkWin
+#copy 6 bytes from rom to ram
+str|i	0	roomRom	arg0
+lod|i	_	roomRom	tmp
+str|i	_	0	tmp
+lod|i	_	roomRom	tmp
+str|i	_	1	tmp
+lod|i	_	roomRom	tmp
+str|i	_	2	tmp
+lod|i	_	roomRom	tmp
+str|i	_	3	tmp
+lod|i	_	roomRom	tmp
+str|i	_	4	tmp
+lod|i	_	roomRom	tmp
+str|i	_	5	tmp
+
+# print text for room
+mov	room	arg0
+cal|i 	_ printString
+cal|i	_ printNewline
+
+# Check if there's an item here
+# that we don't have already
+lod|i	_	5	7 # 7 stores item id
+te|i	7	0
+t|jmp|i	_ noItemInRoom
+mov|i	inventory	3
+lod	3	7	4
+te|i	4	0 # check if we don't have the item
+t|mov|i	43	arg0
+t|cal|i	_ printString # "There is a"
+t|add|i	7	30	arg0
+t|cal|i	_ printString	# item str
+t|mov|i	44	arg0
+t|cal|i	_ printString # " here..."
+t|cal|i	_ printNewline
+t|str	3	7	1 # Pick up item
+label noItemInRoom
+
+ret
+
+# Print string stored in string rom
+# arg0: string index
+label printString
+str|i	0	stringRom	arg0
+label printStringLoop
+lod|i	0	stringRom	tmp
+te|i	tmp 0 #check null
+f|str|i	0	console	tmp
+f|jmp|i	_ printStringLoop
+ret
+
+# Print specified character
+# arg0: character to print
+label printChar
+str|i	_	console	arg0
+ret
+
+label printNewline
+mov|i	"\n"	tmp
+str|i	_	console	tmp
+ret
+
+label handleKeyboard
+mov|i	">"	arg0
+cal|i	_ printChar
+mov|i	" "	arg0
+cal|i	_ printChar
+
+label hkLoop
+mov|i	0	cmd
+lod|i	_	keyboard	tmp
+
+te|i	tmp	"n"
+t|mov|i	1	cmd
+te|i	tmp	"e"
+t|mov|i	2	cmd
+te|i	tmp	"s"
+t|mov|i	3	cmd
+te|i	tmp	"w"
+t|mov|i	4	cmd
+te|i	tmp	"i"
+t|mov|i	5	cmd
+
+te|i	cmd	0
+t|jmp|i	_ hkLoop # invalid keypress
+
+mov		tmp	arg0
+cal|i	_ printChar
+cal|i	_ printNewline
+te|i	cmd	5
+t|jmp|i _ hkPrintInv
+cal|i	move/256 move
+jmp|i	_ handleKeyboard
+
+label hkPrintInv
+cal|i	printInv/256 printInv
+jmp|i	_ handleKeyboard
+
+# Moves the specified direction
+# n=1,e=2,s=3,w=4
+# cmd = direction
+label move
+
+#load target room
+lod	_	cmd	tmp
+
+#Check if we can't go this way
+te|i	tmp 0	
+t|mov|i	42	arg0
+t|cal|i	_ printString
+t|cal|i	_ printNewline
+t|ret
+
+#Check flags on the target room
+mov|i	inventory	5
+lod|i	5	3	3 # lantern
+lod|i	5	4	4 # key
+
+str|i	_	roomRom	tmp
+lod|i	_	roomRom	5
+
+and|i	5	darkFlag 6	
+tne|i	6	0 # is it dark
+t|te|i	3	0 # don't have lantern
+t|mov|i	45	arg0
+t|cal|i	_ printString
+t|cal|i	_ printNewline
+t|ret
+
+and|i	5	lockedFlag 6	
+tne|i	6	0 # is it dark
+t|te|i	4	0 # don't have key
+t|mov|i	46	arg0
+t|cal|i	_ printString
+t|cal|i	_ printNewline
+t|ret
+
+# We can go this way!
+# Go to the target room
+lod	_	cmd	arg0
+cal|i	_ enterRoom
+ret
+
+label printInv
+t|mov|i	47	arg0
+t|cal|i	_ printString
+
+#count items
+cal|i	countItems/256 countItems
+add|i	y	"0"	arg0
+cal|i	_ printChar
+
+mov|i	48	arg0
+cal|i	_ printString
+cal|i	_ printNewline
+
+#print each treasure
+mov|i 1	x	
+mov|i 0 y
+mov|i inventory w
+label pi1
+lod		w	x	z
+te|i	z	1
+t|add|i	x	30	arg0
+t|cal|i	_ printString
+te|i	z	1
+t|cal|i	_ printNewline
+add|i	x	1	x
+tl|i	x	9
+t|jmp|i	pi1/256 pi1
+
+ret
+
+# must be in the treasure room
+# and have all items
+label checkWin
+te|i room 1
+f|ret
+cal|i	countItems/256 countItems
+te|i	y	5
+f|ret
+
+mov|i	49	arg0
+cal|i	_ printString
+
+hlt
+
+# counts number of items in
+# inventory. returns in y
+label countItems
+mov|i 1	x	
+mov|i 0 y
+mov|i inventory w
+label ci0
+lod		w	x	z
+add		y	z	y
+add|i	x	1	x
+tl|i	x	9
+t|jmp|i	ci0/256 ci0
+ret
