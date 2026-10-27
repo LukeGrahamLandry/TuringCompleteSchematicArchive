@@ -1,0 +1,50 @@
+const left 0
+const move 1
+const right 2
+const wait 3
+const action 4
+const shoot 5
+const wall 1
+const door 3
+
+label loop
+
+right reg0_to_out
+in_to_reg1 door reg0_to_reg2
+sub forward_door j_eqz
+left reg0_to_out
+
+in_to_reg1 wall reg0_to_reg2 sub 
+reg3_to_reg4
+right reg0_to_out
+in_to_reg1 wall reg0_to_reg2 sub 
+reg3_to_reg5
+left reg0_to_out
+# reg4=!wall forward; reg5=!wall right;
+
+reg4_to_reg1 0 reg0_to_reg2 
+sub forward_no_wall j_nez
+
+reg5_to_reg1 0 reg0_to_reg2 
+sub right_is_wall j_eqz
+forward_wall_right_no_wall jmp
+
+label forward_no_wall
+move reg0_to_out
+left reg0_to_out
+loop jmp
+
+label forward_wall_right_no_wall
+right reg0_to_out
+move reg0_to_out
+left reg0_to_out
+loop jmp
+
+label right_is_wall
+right reg0_to_out
+loop jmp
+
+label forward_door
+action reg0_to_out
+move reg0_to_out
+loop jmp
