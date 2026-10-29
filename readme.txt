@@ -14,4 +14,7 @@ if you want to add something or if your creation is here and you don't want it t
 v1 is an old version (0.1059 beta). 
 i only thought of saving these after the game updated so 
 these are just the random ones i'd been playing with.  
+
 v2 is after save_breaker. 
+i've added extra .bin files by assembling the .asm files. 
+- https://github.com/Stuffe/isa_spec
