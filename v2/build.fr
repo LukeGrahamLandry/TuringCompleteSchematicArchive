@@ -1,0 +1,48 @@
+
+// https://github.com/stuffe/isa_spec 8a8833e7243210119a508abc9b1a36c6c0260631
+// https://nim-lang.org/download/nim-2.4.0-macosx_arm64.tar.xz
+main :: fn() void = {
+    args := import("@/lib/args.fr")'parse_args(@struct {
+        exe := "";       // isa_spec assembler
+        dir := "";       // (recursively) any .asm files will be assembled with the nearest spec.isa
+        clean := false;  // redo ones that already have a .bin?
+    });
+    @assert(args.exe != "" && args.dir != "", "-exe isa_spec_main -dir path_to_asm_files");
+    tasks := @ref Task.list(temp());
+    find_assembly(args.dir, .None, tasks);
+    each tasks { it |
+        if args.clean || it.new {
+            @println("======");
+            if !run_cmd_blocking(args.exe, @slice(it.isa_path, it.asm_path)) {
+                @eprintln("FAIL");
+            };
+        };
+    };
+}
+
+Task :: @struct(isa_path: Str, asm_path: Str, new: bool);
+find_assembly :: fn(dir: Str, isa: ?Str, out: *List(Task)) void = {
+    absolute :: fn(name) => @tfmt("%/%", dir, name);
+    files := collect_directory_ordered(dir, temp(), temp())
+        || return(@eprintln("failed to walk %", dir));
+    if files.find(fn(it) => it.name == "spec.isa") { it |
+        isa = (Some = absolute(it.name));
+    };
+    each files { it |
+        if it.type == .Directory {
+            find_assembly(absolute(it.name), isa, out);
+        };
+        if it.type == .File && it.name.ends_with(".asm") {
+            if isa { isa |
+                name := it.name.slice(0, it.name.len - 4);
+                new := !files.contains(fn(it) => it.name.ends_with(".bin") && it.name.starts_with(name));
+                out.push(isa_path = isa, asm_path = absolute(it.name), new = new);
+            } else {
+                @eprintln("missing spec.isa for % %", dir, it.name);
+            };
+        };
+    };
+}
+
+#use("@/lib/sys/fs.fr");
+#use("@/lib/sys/subprocess.fr");
