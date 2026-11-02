@@ -1,0 +1,247 @@
+[settings]
+name = "Symphony"
+line_comments = [";"]
+
+[fields]
+
+register
+zr 0000
+r1 0001
+r2 0010
+r3 0011
+r4 0100
+r5 0101
+r6 0110
+r7 0111
+r8 1000
+r9 1001
+r10 1010
+r11 1011
+r12 1100
+r13 1101
+sp 1110
+flags 1111
+
+opcode
+nand	0000
+or		0001
+and		0010
+nor		0011
+add		0100
+sub		0101
+xor		0110
+lsl		0111
+lsr		1000
+asr		1001
+cmp		1010
+;mul		1011 ;not added because too high delay
+
+condition
+never	0000
+always	1000
+equ		0001
+neq		1001
+bl		0010
+abe		1010
+ble		0011
+ab		1011
+lt		0100
+gte		1100
+lte		0101
+gt		1101
+
+;
+;0MMIOOOO AAAABBBB CCCCCCCC CCCCCCCC
+
+[instructions]
+
+%opcode(opcode) %a(register), %b(register), %c:U16(immediate | label)
+0011oooo aaaabbbb cccccccc cccccccc
+# %opcode %b and %c and store the result in %a.
+
+%opcode(opcode) %a(register), %b(register), %c(register)
+0010oooo aaaabbbb 0000cccc 00000000
+# %opcode %b and %c and store the result in %a.
+
+
+cmp %a(register), %b(register)
+00101010 1111aaaa 0000bbbb 00000000
+# Compares %a and %b and store the result in the 'flags' register.
+
+cmp %a(register), %b:U16(immediate)
+00111010 1111aaaa bbbbbbbb bbbbbbbb
+# Compares %a and %b and store the result in the 'flags' register.
+
+
+jmpif %condition(condition), %a(register)
+0100cccc 00001111 0000aaaa 00000000
+# Jump to %a if %condition is true, reading from 'flags'.
+
+jmpif %condition(condition), %a:U16(immediate | label)
+0101cccc 00001111 aaaaaaaa aaaaaaaa
+# Jump to %a if %condition is true, reading from 'flags'.
+
+jmp %a(register)
+01001000 00001111 0000aaaa 00000000
+# Jump to %a.
+
+jmp %a:U16(immediate | label)
+01011000 00001111 aaaaaaaa aaaaaaaa
+# Jump to %a.
+
+nop
+00000000 00000000 00000000 00000000
+# Does nothing.
+
+in %a(register)
+00000001 aaaa0000 00000000 00000000
+# Loads an input and stores it in %a.
+
+out %a(register)
+00000010 00000000 0000aaaa 00000000
+# Sends %a to output.
+
+out %a:U16(immediate)
+00010010 00000000 aaaaaaaa aaaaaaaa
+# Sends %a to output.
+
+keyboard %a(register)
+00000011 aaaa0000 00000000 00000000
+# Loads keyboard input and stores it to %a.
+
+screen %a(register), %b(register)
+00000100 0000aaaa 0000bbbb 00000000
+# Stores the value of %b in screen setting %a.
+
+screen %a(register), %b:U16(immediate | label)
+00010100 0000aaaa bbbbbbbb bbbbbbbb
+# Stores the value of %b in screen setting %a.
+
+time_0 %a(register)
+00000101 aaaa0000 00000000 00000000
+# Loads the lower four bytes of the time value and stores it to %a.
+
+time_1 %a(register)
+00000110 aaaa0000 00000000 00000000
+# Loads the upper four bytes of the time value and stores it to %a.
+
+counter %a(register)
+00000111 aaaa0000 00000000 00000000
+# Loads the counter value and stores it to %a.
+
+
+load_8 %dest(register), [%adr(register)]
+01100000 dddd0000 0000aaaa 00000000
+# Loads address %adr from main memory and stores it to %dest.
+
+load_8 %dest(register), [%adr:U16(immediate | label)]
+01110000 dddd0000 aaaaaaaa aaaaaaaa
+# Loads address %adr from main memory and stores it to %dest.
+
+load_16 %dest(register), [%adr(register)]
+01100001 dddd0000 0000aaaa 00000000
+# Loads address %adr from main memory and stores it to %dest.
+
+load_16 %dest(register), [%adr:U16(immediate | label)]
+01110001 dddd0000 aaaaaaaa aaaaaaaa
+# Loads address %adr from main memory and stores it to %dest.
+
+load_32 %dest(register), [%adr(register)]
+01100010 dddd0000 0000aaaa 00000000
+# Loads address %adr from main memory and stores it to %dest.
+
+load_32 %dest(register), [%adr:U16(immediate | label)]
+01110010 dddd0000 aaaaaaaa aaaaaaaa
+# Loads address %adr from main memory and stores it to %dest.
+
+pload %dest(register), [%adr(register)]
+01100011 dddd0000 0000aaaa 00000000
+# Loads address %adr from persistent memory and stores it to %dest. Note that stores take 7 cycles.
+
+pload %dest(register), [%adr:U16(immediate)]
+01110011 dddd0000 aaaaaaaa aaaaaaaa
+# Loads address %adr from persistent memory and stores it to %dest. Note that stores take 7 cycles.
+
+store_8 [%adr(register)], %value(register)
+01100100 0000vvvv 0000aaaa 00000000
+# Store %value to address %adr in main memory.
+
+store_8 [%adr:U16(immediate | label)], %value(register)
+01110100 0000vvvv aaaaaaaa aaaaaaaa
+# Store %value to address %adr in main memory.
+
+store_16 [%adr(register)], %value(register)
+01100101 0000vvvv 0000aaaa 00000000
+# Store %value to address %adr in main memory.
+
+store_16 [%adr:U16(immediate | label)], %value(register)
+01110101 0000vvvv aaaaaaaa aaaaaaaa
+# Store %value to address %adr in main memory.
+
+store_32 [%adr(register)], %value(register)
+01100110 0000vvvv 0000aaaa 00000000
+# Store %value to address %adr in main memory.
+
+store_32 [%adr:U16(immediate | label)], %value(register)
+01110110 0000vvvv aaaaaaaa aaaaaaaa
+# Store %value to address %adr in main memory.
+
+pstore [%adr(register)], %value(register)
+01100111 0000vvvv 0000aaaa 00000000
+# Store %value to address %adr in persistent memory. Note this takes 7 cycles to take effect.
+
+pstore [%adr:U16(immediate)], %value(register)
+01110111 0000vvvv aaaaaaaa aaaaaaaa
+# Store %value to address %adr in persistent memory. Note this takes 7 cycles to take effect.
+
+
+mov %a(register), %b(register)
+00100001 aaaa0000 0000bbbb 00000000
+# Moves a value from %b to %a.
+
+mov %a(register), %b:U16(immediate | label)
+00110001 aaaa0000 bbbbbbbb bbbbbbbb
+# Moves a value to %a.
+
+mov %a(register), !%b:U32(immediate | label)
+%c = %a
+%d = %a
+%e = %a
+%f = %a
+00110001 aaaa0000 bbbbbbbb bbbbbbbb  00110111 ffffcccc 00000000 00010000  00110001 ddddeeee bbbbbbbb bbbbbbbb
+# Moves %b as a 32 bit immediate into %a.
+
+neg %a(register), %b(register)
+00100101 aaaa0000 0000bbbb 00000000
+# Negates a %b and stores it in %a.
+
+neg %a(register), %b:U16(immediate)
+00110101 aaaa0000 bbbbbbbb bbbbbbbb
+# Negates a value and stores it in %a.
+
+not %a(register), %b(register)
+00100011 aaaa0000 0000bbbb 00000000
+# Toggles the bits of %b and stores it in %a.
+
+not %a(register), %b:U16(immediate)
+00110011 aaaa0000 bbbbbbbb bbbbbbbb
+# Toggles the bits of a value and stores it in %a.
+
+
+push %a(register)
+00110101 11101110 00000000 00000100   01100110 0000aaaa 00001110 00000000
+# Pushes %a on to the stack. This instruction is a synonym for:   sub sp, sp, 4   store_32 [sp], %a
+
+pop %a(register)
+01100010 aaaa0000 00001110 00000000   00110100 11101110 00000000 00000100
+# Pops %a off the stack. This instruction is a synonym for:   load_32 %a, [sp]   add sp, sp, 4
+
+call %a(label)
+00000111 11110000 00000000 00000000   00110100 11111111 00000000 00010100   00110101 11101110 00000000 00000100   01100110 00001111 00001110 00000000   01011000 00001111 aaaaaaaa aaaaaaaa
+# Calls %a. Overwrites the flag register. This instruction is a synonym for:   counter flags   add flags, flags, 20   sub sp, sp, 4   store_32 [sp], flags   jmp %a
+
+
+ret
+01100010 11110000 00001110 00000000   00110100 11101110 00000000 00000100   01001000 00001111 00001111 00000000
+# Returns from the last function call. Overwrites the flag register. This instruction is a synonym for:   load_32 flags, [sp]   add sp, sp, 4   jmp flags
+

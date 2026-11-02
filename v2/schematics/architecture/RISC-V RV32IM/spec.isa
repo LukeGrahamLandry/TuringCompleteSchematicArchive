@@ -1,0 +1,337 @@
+[settings]
+
+name = "RV32I"
+endianness = little
+
+;注释：
+
+;内存的部分地址被映射为外设，0x08000000~0x08000014分别为时间低32位，高32位，键盘队列非空，键盘事件
+;改写显示屏1的选项，改写显示屏2的选项，其中改写的选项为写入数值的高4位，改写的数值为写入数值的低28位
+;读取键盘时，按下或抬起时分别会产生一次键盘事件，读取的键盘事件的低8位为按下键位的ASCII码，第8位（从第0位开始）为按下/抬起
+;当改写选项为0时，改写的数值从0到3分别对应ASCII 8模式（单色ASCII字符模式），ASCII 32模式（8位色ASCII模式）Pixel 8模式（8位色点阵图像模式），Pixel 32模式（真彩色点阵图像模式）
+;选项1为设置数据偏移量（即显示缓冲区的起始位置）
+;当为ASCII 8模式，设置选项从2到4分别为设置前景色，设置背景色，设置字体
+;当为ASCII 32模式时，每组相邻4个字节中的前3个字节被解释为ASCII字符，前景色，背景色，8位颜色由3位红色，3位绿色和2位蓝色组成，即RRRGGGBB
+;当为Pixel 8模式时，每个字节被解释为一个像素，8位颜色由3位红色，3位绿色和2位蓝色组成，即RRRGGGBB
+;当为Pixel 32模式时，每组相邻4个字节中的前3个字节被解释为一个像素的颜色，分别为红绿蓝各一个字节
+;选项2为分辨率，实际分辨率为选项2的数值setting依照下式确定：4*(setting+1):3*(setting+1)setting最大值为255
+
+
+[fields]
+
+register
+x0 00000
+zero 00000
+x1 00001
+ra 00001
+x2 00010
+sp 00010
+x3 00011
+gp 00011
+x4 00100
+tp 00100
+x5 00101
+t0 00101
+x6 00110
+t1 00110
+x7 00111
+t2 00111
+x8 01000
+fp 01000
+s0 01000
+x9 01001
+s1 01001
+x10 01010
+a0 01010
+x11 01011
+a1 01011
+x12 01100
+a2 01100
+x13 01101
+a3 01101
+x14 01110
+a4 01110
+x15 01111
+a5 01111
+x16 10000
+a6 10000
+x17 10001
+a7 10001
+x18 10010
+s2 10010
+x19 10011
+s3 10011
+x20 10100
+s4 10100
+x21 10101
+s5 10101
+x22 10110
+s6 10110
+x23 10111
+s7 10111
+x24 11000
+s8 11000
+x25 11001
+s9 11001
+x26 11010
+s10 11010
+x27 11011
+s11 11011
+x28 11100
+t3 11100
+x29 11101
+t4 11101
+x30 11110
+t5 11110
+x31 11111
+t6 11111
+
+[instructions]
+
+lui %a(register), %b:U20(immediate)
+bbbbbbbb bbbbbbbb bbbbaaaa a0110111
+# 加载20位无符号立即数 %b 到寄存器 %a 的高位
+
+
+auipc %a(register), %b:U20(immediate)
+bbbbbbbb bbbbbbbb bbbbaaaa a0010111
+# 加载20位立即数到高位并加上程序计数器的值，写入到寄存器 %a
+
+
+jal %a(register), %b:S21(immediate)
+%b[20:20]%b[10:1]%b[11:11]%b[19:12]aaaa a1101111
+# 保存下一条指令的地址到 %a 并把程序计数器的值加上 %b 作为跳转地址
+
+
+jalr %a(register), %b(register), %c:S12(immediate)
+cccccccc ccccbbbb b000aaaa a1100111
+# 保存下一条指令的地址到 %a 并把寄存器 %b 的值加上 %c 作为跳转地址
+
+
+beq %a(register), %b(register), %c:S13(immediate)
+%c[12:12]%c[10:5]b bbbbaaaa a000%c[4:1] %c[11:11]1100011
+# 若寄存器 %a 的值等于寄存器 %b 的值，则将程序计数器的值加上 %c 作为跳转地址
+
+
+bne %a(register), %b(register), %c:S13(immediate)
+%c[12:12]%c[10:5]b bbbbaaaa a001%c[4:1] %c[11:11]1100011
+# 若寄存器 %a 的值不等于寄存器 %b 的值，则将程序计数器的值加上 %c 作为跳转地址
+
+
+blt %a(register), %b(register), %c:S13(immediate)
+%c[12:12]%c[10:5]b bbbbaaaa a100%c[4:1] %c[11:11]1100011
+# 若寄存器 %a 的值有符号小于寄存器 %b 的值，则将程序计数器的值加上 %c 作为跳转地址
+
+
+bge %a(register), %b(register), %c:S13(immediate)
+%c[12:12]%c[10:5]b bbbbaaaa a101%c[4:1] %c[11:11]1100011
+# 若寄存器 %a 的值有符号大于等于寄存器 %b 的值，则将程序计数器的值加上 %c 作为跳转地址
+
+
+bltu %a(register), %b(register), %c:S13(immediate)
+%c[12:12]%c[10:5]b bbbbaaaa a110%c[4:1] %c[11:11]1100011
+# 若寄存器 %a 的值无符号小于寄存器 %b 的值，则将程序计数器的值加上 %c 作为跳转地址
+
+
+bgeu %a(register), %b(register), %c:S13(immediate)
+%c[12:12]%c[10:5]b bbbbaaaa a111%c[4:1] %c[11:11]1100011
+# 若寄存器 %a 的值无符号大于等于寄存器 %b 的值，则将程序计数器的值加上 %c 作为跳转地址
+
+
+lb %a(register), %c:S12(immediate)(%b(register))
+cccccccc ccccbbbb b000aaaa a0000011
+# 将寄存器 %b 的值加上 %c 作为地址，从内存中读取8位数据进行有符号扩展后写入寄存器 %a
+
+
+lh %a(register), %c:S12(immediate)(%b(register))
+cccccccc ccccbbbb b001aaaa a0000011
+# 将寄存器 %b 的值加上 %c 作为地址，从内存中读取16位数据进行有符号扩展后写入寄存器 %a
+
+
+lw %a(register), %c:S12(immediate)(%b(register))
+cccccccc ccccbbbb b010aaaa a0000011
+# 将寄存器 %b 的值加上 %c 作为地址，从内存中读取32位数据写入寄存器 %a
+
+
+lbu %a(register), %c:S12(immediate)(%b(register))
+cccccccc ccccbbbb b100aaaa a0000011
+# 将寄存器 %b 的值加上 %c 作为地址，从内存中读取8位数据进行无符号扩展后写入寄存器 %a
+
+
+lhu %a(register), %c:S12(immediate)(%b(register))
+cccccccc ccccbbbb b101aaaa a0000011
+# 将寄存器 %b 的值加上 %c 作为地址，从内存中读取16位数据进行无符号扩展后写入寄存器 %a
+
+
+sb %a(register), %c:S12(immediate)(%b(register))
+%c[11:5]a aaaabbbb b000%c[4:0]0100011
+# 将寄存器 %b 的值加上 %c 作为地址，将寄存器 %a 的值的低8位写入内存
+
+
+sh %a(register), %c:S12(immediate)(%b(register))
+%c[11:5]a aaaabbbb b001%c[4:0]0100011
+# 将寄存器 %b 的值加上 %c 作为地址，将寄存器 %a 的值的低16位写入内存
+
+
+sw %a(register), %c:S12(immediate)(%b(register))
+%c[11:5]a aaaabbbb b010%c[4:0]0100011
+# 将寄存器 %b 的值加上 %c 作为地址，将寄存器 %a 的值写入内存
+
+
+addi %a(register), %b(register), %c:S12(immediate)
+cccccccc ccccbbbb b000aaaa a0010011
+# 将寄存器 %b 的值与 %c 相加后写入寄存器 %a
+
+
+slti %a(register), %b(register), %c:S12(immediate)
+cccccccc ccccbbbb b010aaaa a0010011
+# 若寄存器 %b 的值有符号小于 %c ，则把寄存器 %a 置1
+
+
+sltiu %a(register), %b(register), %c:S12(immediate)
+cccccccc ccccbbbb b011aaaa a0010011
+# 若寄存器 %b 的值无符号小于 %c ，则把寄存器 %a 置1
+
+
+xori %a(register), %b(register), %c:S12(immediate)
+cccccccc ccccbbbb b100aaaa a0010011
+# 将寄存器 %b 的值与 %c 按位异或后写入寄存器 %a
+
+
+ori %a(register), %b(register), %c:S12(immediate)
+cccccccc ccccbbbb b110aaaa a0010011
+# 将寄存器 %b 的值与 %c 按位或后写入寄存器 %a
+
+
+andi %a(register), %b(register), %c:S12(immediate)
+cccccccc ccccbbbb b111aaaa a0010011
+# 将寄存器 %b 的值与 %c 按位与后写入寄存器 %a
+
+
+slli %a(register), %b(register), %c:U5(immediate)
+0000000c ccccbbbb b001aaaa a0010011
+# 将寄存器 %b 的值逻辑左移 %c 位后写入寄存器 %a
+
+
+srli %a(register), %b(register), %c:U5(immediate)
+0000000c ccccbbbb b101aaaa a0010011
+# 将寄存器 %b 的值逻辑右移 %c 位后写入寄存器 %a
+
+
+srai %a(register), %b(register), %c:U5(immediate)
+0100000c ccccbbbb b101aaaa a0010011
+# 将寄存器 %b 的值算术右移 %c 位后写入寄存器 %a
+
+
+add %a(register), %b(register), %c(register)
+0000000c ccccbbbb b000aaaa a0110011
+# 将寄存器 %b 的值与寄存器 %c 的值相加后存入寄存器 %a
+
+
+sub %a(register), %b(register), %c(register)
+0100000c ccccbbbb b000aaaa a0110011
+# 将寄存器 %b 的值与寄存器 %c 的值相减后存入寄存器 %a
+
+
+sll %a(register), %b(register), %c(register)
+0000000c ccccbbbb b001aaaa a0110011
+# 将寄存器 %c 的值作为左移量，对寄存器 %c 的值逻辑左移后存入寄存器 %a
+
+
+slt %a(register), %b(register), %c(register)
+0000000c ccccbbbb b010aaaa a0110011
+# 若寄存器 %b 的值有符号小于寄存器 %c 的值，则把寄存器 %a 置1
+
+
+sltu %a(register), %b(register), %c(register)
+0000000c ccccbbbb b011aaaa a0110011
+# 若寄存器 %b 的值无符号小于 %c 的值，则把寄存器 %a 置1
+
+
+xor %a(register), %b(register), %c(register)
+0000000c ccccbbbb b100aaaa a0110011
+# 将寄存器 %b 的值与寄存器 %c 的值按位异或后存入寄存器 %a
+
+
+srl %a(register), %b(register), %c(register)
+0000000c ccccbbbb b101aaaa a0110011
+# 将寄存器 %c 的值作为右移量，对寄存器 %c 的值逻辑右移后存入寄存器 %a
+
+
+sra %a(register), %b(register), %c(register)
+0100000c ccccbbbb b101aaaa a0110011
+# 将寄存器 %c 的值作为右移量，对寄存器 %c 的值算术右移后存入寄存器 %a
+
+
+or %a(register), %b(register), %c(register)
+0000000c ccccbbbb b110aaaa a0110011
+# 将寄存器 %b 的值与寄存器 %c 的值按位或后存入寄存器 %a
+
+
+and %a(register), %b(register), %c(register)
+0000000c ccccbbbb b111aaaa a0110011
+# 将寄存器 %b 的值与寄存器 %c 的值按位与后存入寄存器 %a
+
+
+nop
+00000000 00000000 00000000 00110011
+# 无操作
+
+;自定义指令
+
+li %a(register), %c:S12(immediate|label)
+cccccccc cccc0000 0000aaaa a0010011
+# 将立即数 %c 写入寄存器 %a
+
+
+mov %a(register), %b(register)
+00000000 0000bbbb b000aaaa a0010011
+# 将寄存器 %b 的值写入寄存器 %a
+
+
+li %rd(register), %imm:S32(immediate | label)
+%hi = (%imm + 2048) /u 4096
+%lo = %imm - %hi * 4096
+%lo[11:0] %rd[4:0] 000 %rd[4:0] 0010011    %hi[19:0] %rd[4:0] 0110111
+# 将 32 位立即数 %imm 加载到寄存器 %rd (lui %rd, 高20位; addi %rd, %rd, 低12位)
+
+;M扩展
+
+mul %a(register), %b(register), %c(register)
+0000001c ccccbbbb b000aaaa a0110011
+# 将寄存器 %b 的值与寄存器 %c 的值相乘后将低32位存入寄存器 %a
+
+
+mulh %a(register), %b(register), %c(register)
+0000001c ccccbbbb b001aaaa a0110011
+# 将寄存器 %b 的有符号值与寄存器 %c 的有符号值相乘后将高32位存入寄存器 %a
+
+
+mulhsu %a(register), %b(register), %c(register)
+0000001c ccccbbbb b010aaaa a0110011
+# 将寄存器 %b 的有符号值与寄存器 %c 的无符号值相乘后将高32位存入寄存器 %a
+
+
+mulhu %a(register), %b(register), %c(register)
+0000001c ccccbbbb b011aaaa a0110011
+# 将寄存器 %b 的无符号值与寄存器 %c 的无符号值相乘后将高32位存入寄存器 %a
+
+
+div %a(register), %b(register), %c(register)
+0000001c ccccbbbb b100aaaa a0110011
+# 将寄存器 %b 的值与寄存器 %c 的值有符号相除后存入寄存器 %a
+
+
+divu %a(register), %b(register), %c(register)
+0000001c ccccbbbb b101aaaa a0110011
+# 将寄存器 %b 的值与寄存器 %c 的值无符号相除后存入寄存器 %a
+
+
+rem %a(register), %b(register), %c(register)
+0000001c ccccbbbb b110aaaa a0110011
+# 将寄存器 %b 的值与寄存器 %c 的值有符号取余后存入寄存器 %a
+
+
+remu %a(register), %b(register), %c(register)
+0000001c ccccbbbb b111aaaa a0110011
+# 将寄存器 %b 的值与寄存器 %c 的值无符号取余后存入寄存器 %a
