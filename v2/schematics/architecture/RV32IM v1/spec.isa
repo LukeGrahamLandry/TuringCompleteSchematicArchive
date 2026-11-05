@@ -1,0 +1,553 @@
+[settings]
+name = "RISC-V RV32IM"
+endianness = little
+line_comments = ["#", "//"]
+
+[fields]
+
+// RISC-V 32 个通用整数寄存器, 5 位编码
+// 每个寄存器同时提供 ABI 名称 (zero/ra/sp/gp/tp/t0-t2/s0/fp/s1/a0-a7/s2-s11/t3-t6) 和 x 名称 (x0-x31)
+register
+zero 00000
+x0   00000
+ra   00001
+x1   00001
+sp   00010
+x2   00010
+gp   00011
+x3   00011
+tp   00100
+x4   00100
+t0   00101
+x5   00101
+t1   00110
+x6   00110
+t2   00111
+x7   00111
+s0   01000
+fp   01000
+x8   01000
+s1   01001
+x9   01001
+a0   01010
+x10  01010
+a1   01011
+x11  01011
+a2   01100
+x12  01100
+a3   01101
+x13  01101
+a4   01110
+x14  01110
+a5   01111
+x15  01111
+a6   10000
+x16  10000
+a7   10001
+x17  10001
+s2   10010
+x18  10010
+s3   10011
+x19  10011
+s4   10100
+x20  10100
+s5   10101
+x21  10101
+s6   10110
+x22  10110
+s7   10111
+x23  10111
+s8   11000
+x24  11000
+s9   11001
+x25  11001
+s10  11010
+x26  11010
+s11  11011
+x27  11011
+t3   11100
+x28  11100
+t4   11101
+x29  11101
+t5   11110
+x30  11110
+t6   11111
+x31  11111
+
+[instructions]
+
+// ============================================================
+// 第一部分: RV32I 基本整数指令集 (47条真实指令 + 伪指令)
+// ============================================================
+
+// -------- 整数计算: U 型格式 (20位立即数) --------
+
+lui %rd(register), %imm:U20(immediate)
+%imm[19:0] %rd[4:0] 0110111
+# 将立即数 %imm 加载到寄存器 %rd 的高 20 位, 低 12 位填 0
+
+auipc %rd(register), %imm:U20(immediate)
+%imm[19:0] %rd[4:0] 0010111
+# 将立即数 %imm 左移 12 位后加上当前 PC 值, 结果存入寄存器 %rd
+
+// -------- 整数计算: I 型格式 (12位立即数) --------
+
+addi %rd(register), %rs1(register), %imm:U12(immediate)
+%imm[11:0] %rs1[4:0] 000 %rd[4:0] 0010011
+# 将寄存器 %rs1 的值与符号扩展的立即数 %imm 相加, 结果存入 %rd (忽略溢出)
+
+addi %rd(register), %rs1(register), %imm:S12(immediate)
+%imm[11:0] %rs1[4:0] 000 %rd[4:0] 0010011
+# 将寄存器 %rs1 的值与符号扩展的立即数 %imm 相加, 结果存入 %rd (忽略溢出)
+
+slti %rd(register), %rs1(register), %imm:S12(immediate)
+%imm[11:0] %rs1[4:0] 010 %rd[4:0] 0010011
+# 若寄存器 %rs1 的值(有符号)小于立即数 %imm(有符号), 则 %rd 置 1, 否则置 0
+
+sltiu %rd(register), %rs1(register), %imm:S12(immediate)
+%imm[11:0] %rs1[4:0] 011 %rd[4:0] 0010011
+# 若寄存器 %rs1 的值(无符号)小于立即数 %imm(先符号扩展再按无符号比较), 则 %rd 置 1, 否则置 0
+
+xori %rd(register), %rs1(register), %imm:S12(immediate)
+%imm[11:0] %rs1[4:0] 100 %rd[4:0] 0010011
+# 将寄存器 %rs1 的值与符号扩展的立即数 %imm 按位异或, 结果存入 %rd
+
+ori %rd(register), %rs1(register), %imm:S12(immediate)
+%imm[11:0] %rs1[4:0] 110 %rd[4:0] 0010011
+# 将寄存器 %rs1 的值与符号扩展的立即数 %imm 按位或, 结果存入 %rd
+
+andi %rd(register), %rs1(register), %imm:S12(immediate)
+%imm[11:0] %rs1[4:0] 111 %rd[4:0] 0010011
+# 将寄存器 %rs1 的值与符号扩展的立即数 %imm 按位与, 结果存入 %rd
+
+slli %rd(register), %rs1(register), %shamt:U5(immediate)
+0000000 %shamt[4:0] %rs1[4:0] 001 %rd[4:0] 0010011
+# 将寄存器 %rs1 的值逻辑左移 %shamt 位 (0 移入低位), 结果存入 %rd
+
+srli %rd(register), %rs1(register), %shamt:U5(immediate)
+0000000 %shamt[4:0] %rs1[4:0] 101 %rd[4:0] 0010011
+# 将寄存器 %rs1 的值逻辑右移 %shamt 位 (0 移入高位), 结果存入 %rd
+
+srai %rd(register), %rs1(register), %shamt:U5(immediate)
+0100000 %shamt[4:0] %rs1[4:0] 101 %rd[4:0] 0010011
+# 将寄存器 %rs1 的值算术右移 %shamt 位 (符号位填充高位), 结果存入 %rd
+
+// -------- 整数计算: R 型格式 (寄存器-寄存器) --------
+
+add %rd(register), %rs1(register), %rs2(register)
+0000000 %rs2[4:0] %rs1[4:0] 000 %rd[4:0] 0110011
+# 将寄存器 %rs1 和 %rs2 的值相加, 结果存入 %rd (忽略溢出)
+
+sub %rd(register), %rs1(register), %rs2(register)
+0100000 %rs2[4:0] %rs1[4:0] 000 %rd[4:0] 0110011
+# 将寄存器 %rs1 的值减去 %rs2 的值, 结果存入 %rd (忽略溢出)
+
+sll %rd(register), %rs1(register), %rs2(register)
+0000000 %rs2[4:0] %rs1[4:0] 001 %rd[4:0] 0110011
+# 将寄存器 %rs1 的值逻辑左移 %rs2 的低 5 位所指定的位数, 结果存入 %rd
+
+slt %rd(register), %rs1(register), %rs2(register)
+0000000 %rs2[4:0] %rs1[4:0] 010 %rd[4:0] 0110011
+# 若寄存器 %rs1 的值(有符号)小于 %rs2 的值(有符号), 则 %rd 置 1, 否则置 0
+
+sltu %rd(register), %rs1(register), %rs2(register)
+0000000 %rs2[4:0] %rs1[4:0] 011 %rd[4:0] 0110011
+# 若寄存器 %rs1 的值(无符号)小于 %rs2 的值(无符号), 则 %rd 置 1, 否则置 0
+
+xor %rd(register), %rs1(register), %rs2(register)
+0000000 %rs2[4:0] %rs1[4:0] 100 %rd[4:0] 0110011
+# 将寄存器 %rs1 和 %rs2 的值按位异或, 结果存入 %rd
+
+srl %rd(register), %rs1(register), %rs2(register)
+0000000 %rs2[4:0] %rs1[4:0] 101 %rd[4:0] 0110011
+# 将寄存器 %rs1 的值逻辑右移 %rs2 的低 5 位所指定的位数, 结果存入 %rd
+
+sra %rd(register), %rs1(register), %rs2(register)
+0100000 %rs2[4:0] %rs1[4:0] 101 %rd[4:0] 0110011
+# 将寄存器 %rs1 的值算术右移 %rs2 的低 5 位所指定的位数, 结果存入 %rd
+
+or %rd(register), %rs1(register), %rs2(register)
+0000000 %rs2[4:0] %rs1[4:0] 110 %rd[4:0] 0110011
+# 将寄存器 %rs1 和 %rs2 的值按位或, 结果存入 %rd
+
+and %rd(register), %rs1(register), %rs2(register)
+0000000 %rs2[4:0] %rs1[4:0] 111 %rd[4:0] 0110011
+# 将寄存器 %rs1 和 %rs2 的值按位与, 结果存入 %rd
+
+// -------- 控制转移: 无条件跳转 (UJ 型 / I 型) --------
+
+jal %rd(register), %off:U32(label | immediate)
+%vrel = %off - $start
+assert(%off % 2 == 0, "跳转目标必须 2 字节对齐")
+%vrel[20:20] %vrel[10:1] %vrel[11:11] %vrel[19:12] %rd[4:0] 1101111
+# 跳转到相对于当前指令偏移 %off 的地址 (±1MB), 并将下一条指令地址 (PC+4) 保存到 %rd
+
+jalr %rd(register), %imm:S12(immediate)(%rs1(register))
+%imm[11:0] %rs1[4:0] 000 %rd[4:0] 1100111
+# 跳转到地址 (%rs1 的值 + 立即数 %imm), 清除结果最低位, 并将下一条指令地址 (PC+4) 保存到 %rd
+
+// -------- 控制转移: 条件分支 (SB 型, ±4KB) --------
+
+beq %rs1(register), %rs2(register), %off:U32(label | immediate)
+%vrel = %off - $start
+assert(%off % 2 == 0, "分支目标必须 2 字节对齐")
+%vrel[12:12] %vrel[10:5] %rs2[4:0] %rs1[4:0] 000 %vrel[4:1] %vrel[11:11] 1100011
+# 若寄存器 %rs1 的值等于 %rs2 的值, 则跳转到相对偏移 %off 的地址
+
+bne %rs1(register), %rs2(register), %off:U32(label | immediate)
+%vrel = %off - $start
+assert(%off % 2 == 0, "分支目标必须 2 字节对齐")
+%vrel[12:12] %vrel[10:5] %rs2[4:0] %rs1[4:0] 001 %vrel[4:1] %vrel[11:11] 1100011
+# 若寄存器 %rs1 的值不等于 %rs2 的值, 则跳转到相对偏移 %off 的地址
+
+blt %rs1(register), %rs2(register), %off:U32(label | immediate)
+%vrel = %off - $start
+assert(%off % 2 == 0, "分支目标必须 2 字节对齐")
+%vrel[12:12] %vrel[10:5] %rs2[4:0] %rs1[4:0] 100 %vrel[4:1] %vrel[11:11] 1100011
+# 若寄存器 %rs1 的值(有符号)小于 %rs2 的值(有符号), 则跳转到相对偏移 %off 的地址
+
+bge %rs1(register), %rs2(register), %off:U32(label | immediate)
+%vrel = %off - $start
+assert(%off % 2 == 0, "分支目标必须 2 字节对齐")
+%vrel[12:12] %vrel[10:5] %rs2[4:0] %rs1[4:0] 101 %vrel[4:1] %vrel[11:11] 1100011
+# 若寄存器 %rs1 的值(有符号)大于等于 %rs2 的值(有符号), 则跳转到相对偏移 %off 的地址
+
+bltu %rs1(register), %rs2(register), %off:U32(label | immediate)
+%vrel = %off - $start
+assert(%off % 2 == 0, "分支目标必须 2 字节对齐")
+%vrel[12:12] %vrel[10:5] %rs2[4:0] %rs1[4:0] 110 %vrel[4:1] %vrel[11:11] 1100011
+# 若寄存器 %rs1 的值(无符号)小于 %rs2 的值(无符号), 则跳转到相对偏移 %off 的地址
+
+bgeu %rs1(register), %rs2(register), %off:U32(label | immediate)
+%vrel = %off - $start
+assert(%off % 2 == 0, "分支目标必须 2 字节对齐")
+%vrel[12:12] %vrel[10:5] %rs2[4:0] %rs1[4:0] 111 %vrel[4:1] %vrel[11:11] 1100011
+# 若寄存器 %rs1 的值(无符号)大于等于 %rs2 的值(无符号), 则跳转到相对偏移 %off 的地址
+
+// -------- 存储器访问: Load (I 型) --------
+
+lb %rd(register), %imm:S12(immediate)(%rs1(register))
+%imm[11:0] %rs1[4:0] 000 %rd[4:0] 0000011
+# 从地址 (%rs1 的值 + %imm) 处读取一个字节 (8 位), 符号扩展到 32 位后存入 %rd
+
+lh %rd(register), %imm:S12(immediate)(%rs1(register))
+%imm[11:0] %rs1[4:0] 001 %rd[4:0] 0000011
+# 从地址 (%rs1 的值 + %imm) 处读取一个半字 (16 位), 符号扩展到 32 位后存入 %rd
+
+lw %rd(register), %imm:S12(immediate)(%rs1(register))
+%imm[11:0] %rs1[4:0] 010 %rd[4:0] 0000011
+# 从地址 (%rs1 的值 + %imm) 处读取一个字 (32 位) 存入 %rd
+
+lbu %rd(register), %imm:S12(immediate)(%rs1(register))
+%imm[11:0] %rs1[4:0] 100 %rd[4:0] 0000011
+# 从地址 (%rs1 的值 + %imm) 处读取一个字节 (8 位), 零扩展到 32 位后存入 %rd
+
+lhu %rd(register), %imm:S12(immediate)(%rs1(register))
+%imm[11:0] %rs1[4:0] 101 %rd[4:0] 0000011
+# 从地址 (%rs1 的值 + %imm) 处读取一个半字 (16 位), 零扩展到 32 位后存入 %rd
+
+// -------- 存储器访问: Store (S 型) --------
+
+sb %rs2(register), %imm:S12(immediate)(%rs1(register))
+%imm[11:5] %rs2[4:0] %rs1[4:0] 000 %imm[4:0] 0100011
+# 将寄存器 %rs2 的低 8 位写入地址 (%rs1 的值 + %imm) 处
+
+sh %rs2(register), %imm:S12(immediate)(%rs1(register))
+%imm[11:5] %rs2[4:0] %rs1[4:0] 001 %imm[4:0] 0100011
+# 将寄存器 %rs2 的低 16 位写入地址 (%rs1 的值 + %imm) 处
+
+sw %rs2(register), %imm:S12(immediate)(%rs1(register))
+%imm[11:5] %rs2[4:0] %rs1[4:0] 010 %imm[4:0] 0100011
+# 将寄存器 %rs2 的完整 32 位值写入地址 (%rs1 的值 + %imm) 处
+
+// -------- 存储器模型: 栅栏指令 (MISC-MEM) --------
+
+fence
+0000 1111 1111 00000 000 00000 0001111
+# 存储器栅栏: 确保本指令之前的所有存储器读写均先于其后的存储器读写完成 (可作 NOP 处理)
+
+fence.i
+0000 0000 0000 00000 001 00000 0001111
+# 指令栅栏: 确保之后的取指可以看到之前的 store 写入 (可作 NOP 处理)
+
+// -------- 系统指令: CSR (SYSTEM) --------
+
+csrrw %rd(register), %csr:U12(immediate), %rs1(register)
+%csr[11:0] %rs1[4:0] 001 %rd[4:0] 1110011
+# 原子交换: 读取 CSR %csr 的旧值(零扩展到 32 位)存入 %rd, 同时将 %rs1 的值写入 CSR %csr
+
+csrrs %rd(register), %csr:U12(immediate), %rs1(register)
+%csr[11:0] %rs1[4:0] 010 %rd[4:0] 1110011
+# 原子读-置位: 读取 CSR %csr 的值存入 %rd, 并将 %rs1 中为 1 的位对应的 CSR 位置 1 (若 %rs1 为 x0 则不写入)
+
+csrrc %rd(register), %csr:U12(immediate), %rs1(register)
+%csr[11:0] %rs1[4:0] 011 %rd[4:0] 1110011
+# 原子读-清位: 读取 CSR %csr 的值存入 %rd, 并将 %rs1 中为 1 的位对应的 CSR 位清零 (若 %rs1 为 x0 则不写入)
+
+csrrwi %rd(register), %csr:U12(immediate), %zimm:U5(immediate)
+%csr[11:0] %zimm[4:0] 101 %rd[4:0] 1110011
+# 原子交换: 读取 CSR %csr 的旧值(零扩展到 32 位)存入 %rd, 同时将 5 位立即数 %zimm 写入 CSR %csr
+
+csrrsi %rd(register), %csr:U12(immediate), %zimm:U5(immediate)
+%csr[11:0] %zimm[4:0] 110 %rd[4:0] 1110011
+# 原子读-置位: 读取 CSR %csr 的值存入 %rd, 并将立即数 %zimm 中为 1 的位对应的 CSR 位置 1 (若 %zimm 为 0 则不写入)
+
+csrrci %rd(register), %csr:U12(immediate), %zimm:U5(immediate)
+%csr[11:0] %zimm[4:0] 111 %rd[4:0] 1110011
+# 原子读-清位: 读取 CSR %csr 的值存入 %rd, 并将立即数 %zimm 中为 1 的位对应的 CSR 位清零 (若 %zimm 为 0 则不写入)
+
+// -------- 系统指令: 环境调用与断点 (SYSTEM) --------
+
+ecall
+000000000000 00000 000 00000 1110011
+# 向运行环境发起请求 (系统调用), 参数通常通过寄存器传递
+
+ebreak
+000000000001 00000 000 00000 1110011
+# 断点: 将控制权交还给调试环境
+
+// -------- 汇编伪指令 (由真实指令编码而来) --------
+
+nop
+000000000000 00000 000 00000 0010011
+# 空操作: 仅使 PC 前进, 不改变任何寄存器或内存状态 (addi x0, x0, 0)
+
+mv %rd(register), %rs1(register)
+000000000000 %rs1[4:0] 000 %rd[4:0] 0010011
+# 将寄存器 %rs1 的值复制到 %rd (addi %rd, %rs1, 0)
+
+not %rd(register), %rs1(register)
+111111111111 %rs1[4:0] 100 %rd[4:0] 0010011
+# 将寄存器 %rs1 的值按位取反后存入 %rd (xori %rd, %rs1, -1)
+
+neg %rd(register), %rs1(register)
+0100000 %rs1[4:0] 00000 000 %rd[4:0] 0110011
+# 将寄存器 %rs1 的值求相反数后存入 %rd (sub %rd, x0, %rs1)
+
+seqz %rd(register), %rs1(register)
+000000000001 %rs1[4:0] 011 %rd[4:0] 0010011
+# 若寄存器 %rs1 的值等于 0, 则 %rd 置 1, 否则置 0 (sltiu %rd, %rs1, 1)
+
+snez %rd(register), %rs1(register)
+0000000 %rs1[4:0] 00000 011 %rd[4:0] 0110011
+# 若寄存器 %rs1 的值不等于 0, 则 %rd 置 1, 否则置 0 (sltu %rd, x0, %rs1)
+
+j %off:U32(label | immediate)
+%vrel = %off - $start
+assert(%off % 2 == 0, "跳转目标必须 2 字节对齐")
+%vrel[20:20] %vrel[10:1] %vrel[11:11] %vrel[19:12] 00000 1101111
+# 无条件跳转到相对偏移 %off 的地址 (jal x0, %off)
+
+jr %rs1(register)
+000000000000 %rs1[4:0] 000 00000 1100111
+# 跳转到寄存器 %rs1 指定的地址 (jalr x0, 0(%rs1))
+
+ret
+000000000000 00001 000 00000 1100111
+# 从函数返回: 跳转到 x1 (ra) 保存的返回地址 (jalr x0, 0(x1))
+
+
+li %rd(register), %imm:U32(immediate | label)
+%hi = (%imm + 2048) /u 4096
+%lo = %imm - %hi * 4096
+%lo[11:0] %rd[4:0] 000 %rd[4:0] 0010011    %hi[19:0] %rd[4:0] 0110111
+# 将 32 位立即数 %imm 加载到寄存器 %rd (lui %rd, 高20位; addi %rd, %rd, 低12位)
+
+li %rd(register), %imm:S32(immediate | label)
+%hi = (%imm + 2048) /u 4096
+%lo = %imm - %hi * 4096
+%lo[11:0] %rd[4:0] 000 %rd[4:0] 0010011    %hi[19:0] %rd[4:0] 0110111
+# 将 32 位立即数 %imm 加载到寄存器 %rd (lui %rd, 高20位; addi %rd, %rd, 低12位)
+
+// li %rd(register), %imm:S12(immediate | label)
+// %imm[11:0] 00000 000 %rd[4:0] 0010011
+// # 将 12 位立即数 %imm 加载到寄存器 %rd (addi %rd, zero, imm)
+
+// -------- 伪指令: 比较置位 (表21.1) --------
+
+sltz %rd(register), %rs1(register)
+0000000 00000 %rs1[4:0] 010 %rd[4:0] 0110011
+# 若寄存器 %rs1 的值(有符号)小于 0, 则 %rd 置 1, 否则置 0 (slt %rd, %rs1, x0)
+
+sgtz %rd(register), %rs1(register)
+0000000 %rs1[4:0] 00000 010 %rd[4:0] 0110011
+# 若寄存器 %rs1 的值(有符号)大于 0, 则 %rd 置 1, 否则置 0 (slt %rd, x0, %rs1)
+
+// -------- 伪指令: 跳转变体 (表21.1) --------
+
+jal %off:U32(label | immediate)
+%vrel = %off - $start
+assert(%off % 2 == 0, "跳转目标必须 2 字节对齐")
+%vrel[20:20] %vrel[10:1] %vrel[11:11] %vrel[19:12] 00001 1101111
+# 无条件跳转到相对偏移 %off 的地址, 并将下一条指令地址 (PC+4) 保存到 x1 (jal x1, %off)
+
+jalr %rs1(register)
+000000000000 %rs1[4:0] 000 00001 1100111
+# 跳转到寄存器 %rs1 指定的地址, 并将下一条指令地址 (PC+4) 保存到 x1 (jalr x1, 0(%rs1))
+
+// -------- 伪指令: 全局符号访问 (表21.1, auipc + 偏移, PC 相对) --------
+
+la %rd(register), %sym(label)
+%vrel = %sym - $start
+%hi = (%vrel + 2048) /u 4096
+%lo = %vrel - %hi * 4096
+// %lo[11:0] 00000 000 %rd[4:0] 0010011    %hi[19:0] %rd[4:0] 0010111
+%lo[11:0] %rd[4:0] 000 %rd[4:0] 0010011    %hi[19:0] %rd[4:0] 0010111
+# 将符号 %sym 的地址(PC 相对)加载到寄存器 %rd (auipc %rd, 高20位; addi %rd, %rd, 低12位)
+
+lb %rd(register), %sym(label)
+%vrel = %sym - $start
+%hi = (%vrel + 2048) /u 4096
+%lo = %vrel - %hi * 4096
+%lo[11:0] %rd[4:0] 000 %rd[4:0] 0000011    %hi[19:0] %rd[4:0] 0010111
+# 从符号 %sym 处读取一个字节(8位), 符号扩展到 32 位后存入 %rd
+
+lh %rd(register), %sym(label)
+%vrel = %sym - $start
+%hi = (%vrel + 2048) /u 4096
+%lo = %vrel - %hi * 4096
+%lo[11:0] %rd[4:0] 001 %rd[4:0] 0000011    %hi[19:0] %rd[4:0] 0010111
+# 从符号 %sym 处读取一个半字(16位), 符号扩展到 32 位后存入 %rd
+
+lw %rd(register), %sym(label)
+%vrel = %sym - $start
+%hi = (%vrel + 2048) /u 4096
+%lo = %vrel - %hi * 4096
+%lo[11:0] %rd[4:0] 010 %rd[4:0] 0000011    %hi[19:0] %rd[4:0] 0010111
+# 从符号 %sym 处读取一个字(32位)存入 %rd
+
+sb %rs2(register), %sym(label), %rt(register)
+%vrel = %sym - $start
+%hi = (%vrel + 2048) /u 4096
+%lo = %vrel - %hi * 4096
+%lo[11:5] %rs2[4:0] %rt[4:0] 000 %lo[4:0] 0100011    %hi[19:0] %rt[4:0] 0010111
+# 将寄存器 %rs2 的低 8 位写入符号 %sym 处 (auipc %rt, 高20位; sb %rs2, 低12位(%rt))
+
+sh %rs2(register), %sym(label), %rt(register)
+%vrel = %sym - $start
+%hi = (%vrel + 2048) /u 4096
+%lo = %vrel - %hi * 4096
+%lo[11:5] %rs2[4:0] %rt[4:0] 001 %lo[4:0] 0100011    %hi[19:0] %rt[4:0] 0010111
+# 将寄存器 %rs2 的低 16 位写入符号 %sym 处 (auipc %rt, 高20位; sh %rs2, 低12位(%rt))
+
+sw %rs2(register), %sym(label), %rt(register)
+%vrel = %sym - $start
+%hi = (%vrel + 2048) /u 4096
+%lo = %vrel - %hi * 4096
+%lo[11:5] %rs2[4:0] %rt[4:0] 010 %lo[4:0] 0100011    %hi[19:0] %rt[4:0] 0010111
+# 将寄存器 %rs2 的完整 32 位值写入符号 %sym 处 (auipc %rt, 高20位; sw %rs2, 低12位(%rt))
+
+// -------- 伪指令: 远距离调用 (表21.1, auipc x6 + jalr, PC 相对) --------
+
+call %off:U32(label | immediate)
+%vrel = %off - $start
+%hi = (%vrel + 2048) /u 4096
+%lo = %vrel - %hi * 4096
+%lo[11:0] 00110 000 00001 1100111    %hi[19:0] 00110 0010111
+# 调用远处子过程 %off, 返回地址保存到 x1 (auipc x6, 高20位; jalr x1, 低12位(x6))
+
+tail %off:U32(label | immediate)
+%vrel = %off - $start
+%hi = (%vrel + 2048) /u 4096
+%lo = %vrel - %hi * 4096
+%lo[11:0] 00110 000 00000 1100111    %hi[19:0] 00110 0010111
+# 尾调用远处子过程 %off, 不保存返回地址 (auipc x6, 高20位; jalr x0, 低12位(x6))
+
+// -------- 分支伪指令 (由真实分支指令通过交换/补零操作数编码而来) --------
+
+beqz %rs1(register), %off:U32(label | immediate)
+%vrel = %off - $start
+assert(%off % 2 == 0, "分支目标必须 2 字节对齐")
+%vrel[12:12] %vrel[10:5] 00000 %rs1[4:0] 000 %vrel[4:1] %vrel[11:11] 1100011
+# 若寄存器 %rs1 的值等于 0, 则跳转到相对偏移 %off 的地址 (beq %rs1, x0, %off)
+
+bnez %rs1(register), %off:U32(label | immediate)
+%vrel = %off - $start
+assert(%off % 2 == 0, "分支目标必须 2 字节对齐")
+%vrel[12:12] %vrel[10:5] 00000 %rs1[4:0] 001 %vrel[4:1] %vrel[11:11] 1100011
+# 若寄存器 %rs1 的值不等于 0, 则跳转到相对偏移 %off 的地址 (bne %rs1, x0, %off)
+
+bltz %rs1(register), %off:U32(label | immediate)
+%vrel = %off - $start
+assert(%off % 2 == 0, "分支目标必须 2 字节对齐")
+%vrel[12:12] %vrel[10:5] 00000 %rs1[4:0] 100 %vrel[4:1] %vrel[11:11] 1100011
+# 若寄存器 %rs1 的值(有符号)小于 0, 则跳转到相对偏移 %off 的地址 (blt %rs1, x0, %off)
+
+bgez %rs1(register), %off:U32(label | immediate)
+%vrel = %off - $start
+assert(%off % 2 == 0, "分支目标必须 2 字节对齐")
+%vrel[12:12] %vrel[10:5] 00000 %rs1[4:0] 101 %vrel[4:1] %vrel[11:11] 1100011
+# 若寄存器 %rs1 的值(有符号)大于等于 0, 则跳转到相对偏移 %off 的地址 (bge %rs1, x0, %off)
+
+blez %rs1(register), %off:U32(label | immediate)
+%vrel = %off - $start
+assert(%off % 2 == 0, "分支目标必须 2 字节对齐")
+%vrel[12:12] %vrel[10:5] %rs1[4:0] 00000 101 %vrel[4:1] %vrel[11:11] 1100011
+# 若寄存器 %rs1 的值(有符号)小于等于 0, 则跳转到相对偏移 %off 的地址 (bge x0, %rs1, %off)
+
+bgtz %rs1(register), %off:U32(label | immediate)
+%vrel = %off - $start
+assert(%off % 2 == 0, "分支目标必须 2 字节对齐")
+%vrel[12:12] %vrel[10:5] %rs1[4:0] 00000 100 %vrel[4:1] %vrel[11:11] 1100011
+# 若寄存器 %rs1 的值(有符号)大于 0, 则跳转到相对偏移 %off 的地址 (blt x0, %rs1, %off)
+
+ble %rs1(register), %rs2(register), %off:U32(label | immediate)
+%vrel = %off - $start
+assert(%off % 2 == 0, "分支目标必须 2 字节对齐")
+%vrel[12:12] %vrel[10:5] %rs1[4:0] %rs2[4:0] 101 %vrel[4:1] %vrel[11:11] 1100011
+# 若寄存器 %rs1 的值(有符号)小于等于 %rs2 的值(有符号), 则跳转到相对偏移 %off 的地址 (bge %rs2, %rs1, %off)
+
+bgt %rs1(register), %rs2(register), %off:U32(label | immediate)
+%vrel = %off - $start
+assert(%off % 2 == 0, "分支目标必须 2 字节对齐")
+%vrel[12:12] %vrel[10:5] %rs1[4:0] %rs2[4:0] 100 %vrel[4:1] %vrel[11:11] 1100011
+# 若寄存器 %rs1 的值(有符号)大于 %rs2 的值(有符号), 则跳转到相对偏移 %off 的地址 (blt %rs2, %rs1, %off)
+
+bleu %rs1(register), %rs2(register), %off:U32(label | immediate)
+%vrel = %off - $start
+assert(%off % 2 == 0, "分支目标必须 2 字节对齐")
+%vrel[12:12] %vrel[10:5] %rs1[4:0] %rs2[4:0] 111 %vrel[4:1] %vrel[11:11] 1100011
+# 若寄存器 %rs1 的值(无符号)小于等于 %rs2 的值(无符号), 则跳转到相对偏移 %off 的地址 (bgeu %rs2, %rs1, %off)
+
+bgtu %rs1(register), %rs2(register), %off:U32(label | immediate)
+%vrel = %off - $start
+assert(%off % 2 == 0, "分支目标必须 2 字节对齐")
+%vrel[12:12] %vrel[10:5] %rs1[4:0] %rs2[4:0] 110 %vrel[4:1] %vrel[11:11] 1100011
+# 若寄存器 %rs1 的值(无符号)大于 %rs2 的值(无符号), 则跳转到相对偏移 %off 的地址 (bltu %rs2, %rs1, %off)
+
+// ============================================================
+// 第二部分: M 扩展 - 整数乘除法 (8条)
+// ============================================================
+
+mul %rd(register), %rs1(register), %rs2(register)
+0000001 %rs2[4:0] %rs1[4:0] 000 %rd[4:0] 0110011
+# 将寄存器 %rs1 和 %rs2 的值相乘, 结果 (低 32 位) 存入 %rd
+
+mulh %rd(register), %rs1(register), %rs2(register)
+0000001 %rs2[4:0] %rs1[4:0] 001 %rd[4:0] 0110011
+# 将寄存器 %rs1 和 %rs2 的值 (均按有符号) 相乘, 结果 (高 32 位) 存入 %rd
+
+mulhsu %rd(register), %rs1(register), %rs2(register)
+0000001 %rs2[4:0] %rs1[4:0] 010 %rd[4:0] 0110011
+# 将寄存器 %rs1 (有符号) 和 %rs2 (无符号) 的值相乘, 结果 (高 32 位) 存入 %rd
+
+mulhu %rd(register), %rs1(register), %rs2(register)
+0000001 %rs2[4:0] %rs1[4:0] 011 %rd[4:0] 0110011
+# 将寄存器 %rs1 和 %rs2 的值 (均按无符号) 相乘, 结果 (高 32 位) 存入 %rd
+
+div %rd(register), %rs1(register), %rs2(register)
+0000001 %rs2[4:0] %rs1[4:0] 100 %rd[4:0] 0110011
+# 将寄存器 %rs1 的值 (有符号) 除以 %rs2 的值 (有符号), 商存入 %rd (除数为 0 时结果为 -1)
+
+divu %rd(register), %rs1(register), %rs2(register)
+0000001 %rs2[4:0] %rs1[4:0] 101 %rd[4:0] 0110011
+# 将寄存器 %rs1 的值 (无符号) 除以 %rs2 的值 (无符号), 商存入 %rd (除数为 0 时结果为 2^32-1)
+
+rem %rd(register), %rs1(register), %rs2(register)
+0000001 %rs2[4:0] %rs1[4:0] 110 %rd[4:0] 0110011
+# 将寄存器 %rs1 的值 (有符号) 除以 %rs2 的值 (有符号), 余数存入 %rd (除数为 0 时结果为 %rs1)
+
+remu %rd(register), %rs1(register), %rs2(register)
+0000001 %rs2[4:0] %rs1[4:0] 111 %rd[4:0] 0110011
+# 将寄存器 %rs1 的值 (无符号) 除以 %rs2 的值 (无符号), 余数存入 %rd (除数为 0 时结果为 %rs1)
+

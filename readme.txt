@@ -15,6 +15,6 @@ v1 is an old version (0.1059 beta).
 i only thought of saving these after the game updated so 
 these are just the random ones i'd been playing with.  
 
-v2 is after save_breaker. 
+v2 is after save_breaker (2.1.334). 
 i've added extra .bin files by assembling the .asm files. 
-- https://github.com/Stuffe/isa_spec
+- https://github.com/Stuffe/isa_spec (8a8833e7243210119a508abc9b1a36c6c0260631)
